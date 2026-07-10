@@ -17,32 +17,6 @@ Dependency manager for Vala projects inspired by Composer/Go modules and integra
 	- `subprojects/vamposer.build`
 	- `subprojects/vamposer/meson.build`
 
-## Dependencies
-
-Required to build and run Vamposer:
-
-- build tools: `meson`, `ninja`, `valac`, `pkg-config`
-- Vala packages: `glib-2.0`, `gee-0.8`, `json-glib-1.0`
-- runtime tools: `git` (for cloning dependencies), `pkg-config` (for `system_dependencies` checks)
-
-Required only for tests:
-
-- `vala_testcases` (resolved from system if present, otherwise from `subprojects/testcases` fallback)
-
-## Build
-
-```sh
-meson setup builddir
-meson compile -C builddir
-```
-
-## Release artifacts
-
-Tag-based release workflow (`v*`) publishes:
-
-- CLI binary (`vamposer`)
-- bundled ZIP (`<repo-name>-<tag>-linux.zip`)
-
 ## Run
 
 Initialize a new project config:
@@ -96,6 +70,13 @@ Custom config path:
 ```sh
 ./builddir/src/vamposer install path/to/vamposer.json
 ```
+
+## Release artifacts
+
+Tag-based release workflow (`v*`) publishes:
+
+- CLI binary (`vamposer`)
+- bundled ZIP (`<repo-name>-<tag>-linux.zip`)
 
 ## Config format
 
@@ -163,7 +144,32 @@ Backward-compatible option (also generated):
 subdir('subprojects/vamposer')
 ```
 
+## Build
+
+Build dependencies:
+
+- tools: `meson`, `ninja`, `valac`, `pkg-config`
+- Vala packages: `glib-2.0`, `gee-0.8`, `json-glib-1.0`
+- runtime tools used by dependency operations: `git`, `pkg-config`
+
+```sh
+meson setup builddir
+meson compile -C builddir
+```
+
+or
+
+```sh
+make build
+```
+
+
 ## Test
+
+Test dependencies:
+
+- `vala_testcases` (resolved from system if present, otherwise from `subprojects/vala_testcases` fallback)
+- all Build dependencies above
 
 ```sh
 meson test -C builddir --verbose
