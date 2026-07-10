@@ -6,10 +6,10 @@ RED='\033[0;31m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-PROJECT_SLUG="vala-library-template"
-REPO_URL="${VALA_TEMPLATE_REPO_URL:-https://github.com/ValaFoundation/library-template.git}"
+PROJECT_SLUG="vamposer"
+REPO_URL="${VALA_TEMPLATE_REPO_URL:-https://github.com/ValaFoundation/vamposer.git}"
 REPO_REF="${VALA_TEMPLATE_REF:-master}"
-GITHUB_REPO="${VALA_TEMPLATE_GITHUB_REPO:-ValaFoundation/library-template}"
+GITHUB_REPO="${VALA_TEMPLATE_GITHUB_REPO:-ValaFoundation/vamposer}"
 
 PROJECT_ROOT="${1:-$PWD}"
 MESON_FILE="${PROJECT_ROOT}/meson.build"

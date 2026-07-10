@@ -10,7 +10,7 @@ vala_testcases_dep = dependency('vala_testcases', fallback: ['vala_testcases', '
 test_exe = executable('tests',
   test_sources,
   dependencies: [dependency('gee-0.8'), vala_testcases_dep],
-  link_with: vala_library_template_shared,
+  link_with: vamposer_shared,
   include_directories: [include_directories('../src')],
   vala_args: ['--target-glib=2.58'],
 )

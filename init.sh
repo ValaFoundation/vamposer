@@ -6,9 +6,9 @@ RED='\033[0;31m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-PROJECT_SLUG="vala-library-template"
-DEPENDENCY_NAME="vala_library_template"
-REPO_URL="https://github.com/ValaFoundation/library-template.git"
+PROJECT_SLUG="vamposer"
+DEPENDENCY_NAME="vamposer"
+REPO_URL="https://github.com/ValaFoundation/vamposer.git"
 REPO_REF="master"
 
 echo -e "${BLUE}==> Initializing ${PROJECT_SLUG} dependency...${NC}"
@@ -34,7 +34,7 @@ revision = ${REPO_REF}
 depth = 1
 
 [provide]
-vala_library_template = ${DEPENDENCY_NAME}_deps
+vamposer = ${DEPENDENCY_NAME}_deps
 EOF
 
 echo -e "${GREEN}[Done] Wrap file has been successfully created.${NC}\n"

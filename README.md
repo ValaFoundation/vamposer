@@ -1,12 +1,9 @@
-# Vala library template
+# vamposer
 
 Template repository for creating a new Vala shared library project with Meson, tests, CI and release workflow.
 
 ## Contents
 
-<!-- TEMPLATE_BOOTSTRAP_START -->
-- [Template bootstrap (template only)](#template-bootstrap-template-only)
-<!-- TEMPLATE_BOOTSTRAP_END -->
 - [Build](#build)
 - [Test](#test)
 - [Release artifacts](#release-artifacts)
@@ -14,32 +11,6 @@ Template repository for creating a new Vala shared library project with Meson, t
 - [Dependencies](#dependencies)
 - [License](#license)
 
-<!-- TEMPLATE_BOOTSTRAP_START -->
-## Template bootstrap (template only)
-
-1. Click **Use this template** on GitHub.
-2. Clone your new repository.
-3. Push your initial commit (or run the workflow manually).
-4. The `Template Bootstrap` GitHub Action auto-runs once, commits renamed defaults, and removes itself.
-
-Manual fallback:
-
-```sh
-./bootstrap-template.sh
-```
-
-Optional: explicit project slug:
-
-```sh
-./bootstrap-template.sh my-awesome-lib
-```
-
-Keep bootstrap script after run:
-
-```sh
-KEEP_SCRIPT=1 ./bootstrap-template.sh
-```
-<!-- TEMPLATE_BOOTSTRAP_END -->
 
 ## Build
 
@@ -82,7 +53,7 @@ In consumer project root:
 Or run directly from GitHub:
 
 ```sh
-curl -sSfL https://raw.githubusercontent.com/ValaFoundation/library-template/master/init.sh -o init.sh && chmod +x init.sh && ./init.sh && rm init.sh
+curl -sSfL https://raw.githubusercontent.com/ValaFoundation/vamposer/master/init.sh -o init.sh && chmod +x init.sh && ./init.sh && rm init.sh
 ```
 
 ### Option 2: Local vapi/lib/include integration
@@ -90,7 +61,7 @@ curl -sSfL https://raw.githubusercontent.com/ValaFoundation/library-template/mas
 In consumer project root:
 
 ```sh
-curl -sSfL https://raw.githubusercontent.com/ValaFoundation/library-template/master/init-local-vapi.sh | bash
+curl -sSfL https://raw.githubusercontent.com/ValaFoundation/vamposer/master/init-local-vapi.sh | bash
 ```
 
 This helper downloads release artifacts (or builds from source) and prepares local `vapi/`, `lib/`, and `include/` folders plus reusable Meson variables.
