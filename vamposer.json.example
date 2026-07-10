@@ -1,0 +1,14 @@
+{
+  "name": "com.github.ValaFoundation.my-app",
+  "version": "1.0.0",
+  "description": "Example app using Vamposer",
+  "dependencies": {
+    "github.com/ValaFoundation/testcases": "master",
+    "github.com/ValaFoundation/downloader-lib": "master"
+  },
+  "system_dependencies": {
+    "gtk4": ">=4.10",
+    "libadwaita-1": ">=1.4",
+    "gee-0.8": "*"
+  }
+}

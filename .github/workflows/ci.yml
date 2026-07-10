@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install system dependencies
         run: |
@@ -27,7 +27,8 @@ jobs:
             valac \
             pkg-config \
             libglib2.0-dev \
-            libgee-0.8-dev
+            libgee-0.8-dev \
+            libjson-glib-dev
 
       - name: Configure project
         run: meson setup builddir

@@ -1,0 +1,6 @@
+{
+  "dependencies" : {
+    "github.com/ValaFoundation/testcases" : "*"
+  },
+  "system_dependencies" : {  }
+}

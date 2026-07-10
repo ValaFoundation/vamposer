@@ -42,7 +42,8 @@ jobs:
             valac \
             pkg-config \
             libglib2.0-dev \
-            libgee-0.8-dev
+            libgee-0.8-dev \
+            libjson-glib-dev
 
       - name: Configure release build
         run: meson setup build-release --buildtype=release
@@ -57,20 +58,16 @@ jobs:
         run: |
           PROJECT_SLUG="${GITHUB_REPOSITORY##*/}"
           mkdir -p dist
-          cp -a build-release/src/lib*.so* dist/ || true
-          cp -a build-release/src/vapi/*.vapi dist/ || true
-          cp -a build-release/src/*.h dist/ || true
+          cp -a build-release/src/vamposer dist/ || true
           (cd dist && zip -r ../${PROJECT_SLUG}-${GITHUB_REF_NAME}-linux.zip .)
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: release-linux
+          name: release-linux-cli
           if-no-files-found: warn
           path: |
-            build-release/src/lib*.so*
-            build-release/src/vapi/*.vapi
-            build-release/src/*.h
+            build-release/src/vamposer
             *-${{ github.ref_name }}-linux.zip
 
       - name: Generate release notes
@@ -122,9 +119,7 @@ jobs:
         with:
           body_path: RELEASE_NOTES.md
           files: |
-            build-release/src/lib*.so*
-            build-release/src/vapi/*.vapi
-            build-release/src/*.h
+            build-release/src/vamposer
             *-${{ github.ref_name }}-linux.zip
 
       - name: Persist meson.build version to default branch
