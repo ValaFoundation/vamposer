@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            meson \
+            ninja-build \
+            valac \
+            pkg-config \
+            libglib2.0-dev \
+            libgee-0.8-dev
+
+      - name: Configure project
+        run: meson setup builddir
+
+      - name: Build project
+        run: meson compile -C builddir
+
+      - name: Run tests
+        run: meson test -C builddir --print-errorlogs

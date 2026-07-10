@@ -1,0 +1,61 @@
+name: Bug report
+description: Report a reproducible problem in this library project
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting an issue.
+        Please include enough detail so we can reproduce it.
+
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: Short description of the problem
+      placeholder: Build fails when linking the generated shared library
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Provide exact commands or code snippets
+      placeholder: |
+        1. Configure project with meson setup...
+        2. Build or run tests...
+        3. Observe...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Vala version, GLib version
+      placeholder: Fedora 42, valac 0.56.x, glib 2.88.x
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or output
+      render: shell

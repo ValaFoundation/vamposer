@@ -1,0 +1,155 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Sync meson.build version from tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          perl -0777 -i -pe "s/project\('([^']+)', 'vala', 'c', version: '[^']+'\)/project('\\1', 'vala', 'c', version: '${TAG_VERSION}')/" meson.build
+
+          SYNCED_VERSION="$(sed -nE "s/^project\('[^']+', 'vala', 'c', version: '([^']+)'\)/\1/p" meson.build)"
+          if [ "${SYNCED_VERSION}" != "${TAG_VERSION}" ]; then
+            echo "::error::Version sync failed (${SYNCED_VERSION} != ${TAG_VERSION})"
+            exit 1
+          fi
+
+          echo "meson.build now uses release version ${SYNCED_VERSION}"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            meson \
+            ninja-build \
+            valac \
+            pkg-config \
+            libglib2.0-dev \
+            libgee-0.8-dev
+
+      - name: Configure release build
+        run: meson setup build-release --buildtype=release
+
+      - name: Build release
+        run: meson compile -C build-release
+
+      - name: Run tests
+        run: meson test -C build-release --print-errorlogs
+
+      - name: Create release bundle
+        run: |
+          PROJECT_SLUG="${GITHUB_REPOSITORY##*/}"
+          mkdir -p dist
+          cp -a build-release/src/lib*.so* dist/ || true
+          cp -a build-release/src/vapi/*.vapi dist/ || true
+          cp -a build-release/src/*.h dist/ || true
+          (cd dist && zip -r ../${PROJECT_SLUG}-${GITHUB_REF_NAME}-linux.zip .)
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-linux
+          if-no-files-found: warn
+          path: |
+            build-release/src/lib*.so*
+            build-release/src/vapi/*.vapi
+            build-release/src/*.h
+            *-${{ github.ref_name }}-linux.zip
+
+      - name: Generate release notes
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CURRENT_TAG="${GITHUB_REF_NAME}"
+          PREVIOUS_TAG="$(git tag --sort=-creatordate | grep -v "^${CURRENT_TAG}$" | head -n 1 || true)"
+          if [ -n "${PREVIOUS_TAG}" ]; then
+            RELEASE_RANGE="${PREVIOUS_TAG}..${CURRENT_TAG}"
+          else
+            RELEASE_RANGE="${CURRENT_TAG}"
+          fi
+
+          {
+            echo
+            echo "## Changes"
+            echo
+
+            if [ -n "${PREVIOUS_TAG}" ]; then
+              echo "Changes since ${PREVIOUS_TAG}:"
+              echo
+            else
+              echo "Initial release changes:"
+              echo
+            fi
+
+            while IFS='|' read -r commit_sha commit_subject; do
+              [ -n "${commit_sha}" ] || continue
+
+              github_login="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${commit_sha}" --jq '.author.login // empty' 2>/dev/null || true)"
+
+              short_sha="$(printf '%s' "${commit_sha}" | cut -c1-7)"
+              if [ -n "${github_login}" ]; then
+                echo "- ${commit_subject} (${short_sha}) by @${github_login}"
+              else
+                git_name="$(git show -s --format='%an' "${commit_sha}" 2>/dev/null || echo unknown)"
+                echo "- ${commit_subject} (${short_sha}) by ${git_name}"
+              fi
+            done < <(git log --no-merges --pretty=format:'%H|%s' "${RELEASE_RANGE}")
+
+            echo
+          } > RELEASE_NOTES.md
+
+      - name: Create GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: RELEASE_NOTES.md
+          files: |
+            build-release/src/lib*.so*
+            build-release/src/vapi/*.vapi
+            build-release/src/*.h
+            *-${{ github.ref_name }}-linux.zip
+
+      - name: Persist meson.build version to default branch
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+
+          git fetch origin "${DEFAULT_BRANCH}" --depth=1
+          git checkout "${DEFAULT_BRANCH}"
+
+          perl -0777 -i -pe "s/project\('([^']+)', 'vala', 'c', version: '[^']+'\)/project('\\1', 'vala', 'c', version: '${TAG_VERSION}')/" meson.build
+
+          if git diff --quiet -- meson.build; then
+            echo "No version commit needed on ${DEFAULT_BRANCH}"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add meson.build
+          git commit -m "chore(release): bump meson version to ${TAG_VERSION}"
+
+          if ! git push origin "HEAD:${DEFAULT_BRANCH}"; then
+            echo "::warning::Failed to push version bump commit to ${DEFAULT_BRANCH}."
+            echo "::warning::Please push meson.build version update manually."
+          fi

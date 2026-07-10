@@ -1,0 +1,7 @@
+[wrap-git]
+url = https://github.com/ValaFoundation/testcases.git
+revision = master
+depth = 1
+
+[provide]
+vala_testcases = vala_testcases_dep
