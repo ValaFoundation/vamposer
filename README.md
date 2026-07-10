@@ -19,64 +19,88 @@ Dependency manager for Vala projects inspired by Composer/Go modules and integra
 
 ## Run
 
+Manual install (curl + chmod):
+
+```sh
+curl -fL -o vamposer-linux-x86_64 \
+	https://github.com/ValaFoundation/vamposer/releases/latest/download/vamposer-linux-x86_64
+curl -fL -o vamposer-linux-x86_64.sha256 \
+	https://github.com/ValaFoundation/vamposer/releases/latest/download/vamposer-linux-x86_64.sha256
+sha256sum -c vamposer-linux-x86_64.sha256
+chmod +x vamposer-linux-x86_64
+sudo install -m 0755 vamposer-linux-x86_64 /usr/local/bin/vamposer
+```
+
+Verify installation:
+
+```sh
+vamposer --help
+```
+
 Initialize a new project config:
 
 ```sh
-./builddir/src/vamposer init
+vamposer init
 ```
 
 Initialize with custom config path:
 
 ```sh
-./builddir/src/vamposer init path/to/vamposer.json
+vamposer init path/to/vamposer.json
 ```
 
 ```sh
-./builddir/src/vamposer install
+vamposer install
 ```
 
 Show CLI help:
 
 ```sh
-./builddir/src/vamposer --help
+vamposer --help
 ```
 
 Add or update a dependency in config:
 
 ```sh
-./builddir/src/vamposer require github.com/ValaFoundation/testcases master
+vamposer require github.com/ValaFoundation/testcases master
 ```
 
 Remove a dependency from config:
 
 ```sh
-./builddir/src/vamposer remove github.com/ValaFoundation/testcases
+vamposer remove github.com/ValaFoundation/testcases
 ```
 
 Force refresh all dependencies (re-clone):
 
 ```sh
-./builddir/src/vamposer update
+vamposer update
 ```
 
 Force refresh one dependency:
 
 ```sh
-./builddir/src/vamposer update github.com/ValaFoundation/testcases
+vamposer update github.com/ValaFoundation/testcases
 ```
 
 Custom config path:
 
 ```sh
-./builddir/src/vamposer install path/to/vamposer.json
+vamposer install path/to/vamposer.json
 ```
 
 ## Release artifacts
 
 Tag-based release workflow (`v*`) publishes:
 
-- CLI binary (`vamposer`)
-- bundled ZIP (`<repo-name>-<tag>-linux.zip`)
+- compatibility ZIP (`<repo-name>-<tag>-linux.zip`)
+- standalone Linux binary (`vamposer-linux-x86_64`) + checksum (`.sha256`)
+- Debian package (`vamposer_<version>_amd64.deb`)
+- RPM package (`vamposer-<version>-*.x86_64.rpm`)
+- Ubuntu bundle (`vamposer-<tag>-ubuntu-x86_64.tar.gz`) + raw CLI binary
+- Fedora bundle (`vamposer-<tag>-fedora-x86_64.tar.gz`) + raw CLI binary
+- Arch bundle (`vamposer-<tag>-arch-x86_64.tar.gz`) + raw CLI binary
+- Flatpak bundle (`vamposer-<tag>-flatpak-x86_64.flatpak`) + generated manifest
 
 ## Config format
 

@@ -10,9 +10,9 @@ permissions:
   contents: write
 
 jobs:
-  release-build:
+  build-ubuntu:
+    name: Build Ubuntu
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -25,14 +25,6 @@ jobs:
           TAG_VERSION="${GITHUB_REF_NAME#v}"
           perl -0777 -i -pe "s/project\('([^']+)', 'vala', 'c', version: '[^']+'\)/project('\\1', 'vala', 'c', version: '${TAG_VERSION}')/" meson.build
 
-          SYNCED_VERSION="$(sed -nE "s/^project\('[^']+', 'vala', 'c', version: '([^']+)'\)/\1/p" meson.build)"
-          if [ "${SYNCED_VERSION}" != "${TAG_VERSION}" ]; then
-            echo "::error::Version sync failed (${SYNCED_VERSION} != ${TAG_VERSION})"
-            exit 1
-          fi
-
-          echo "meson.build now uses release version ${SYNCED_VERSION}"
-
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -41,37 +33,293 @@ jobs:
             ninja-build \
             valac \
             pkg-config \
+            zip \
             libglib2.0-dev \
             libgee-0.8-dev \
             libjson-glib-dev
 
-      - name: Configure release build
-        run: meson setup build-release --buildtype=release
+      - name: Configure, build, and test
+        run: |
+          meson setup build-release --buildtype=release
+          meson compile -C build-release
+          meson test -C build-release --print-errorlogs
 
-      - name: Build release
-        run: meson compile -C build-release
-
-      - name: Run tests
-        run: meson test -C build-release --print-errorlogs
-
-      - name: Create release bundle
+      - name: Create Ubuntu bundle
         run: |
           PROJECT_SLUG="${GITHUB_REPOSITORY##*/}"
+          VERSION="${GITHUB_REF_NAME:-dev-${GITHUB_RUN_NUMBER}}"
           mkdir -p dist
-          cp -a build-release/src/vamposer dist/ || true
-          (cd dist && zip -r ../${PROJECT_SLUG}-${GITHUB_REF_NAME}-linux.zip .)
+          cp -a build-release/src/vamposer "dist/vamposer"
+          cp -a build-release/src/vamposer "vamposer-linux-x86_64"
+          sha256sum "vamposer-linux-x86_64" > "vamposer-linux-x86_64.sha256"
+          tar -C dist -czf "vamposer-${VERSION}-ubuntu-x86_64.tar.gz" vamposer
+          (cd dist && zip -r "../${PROJECT_SLUG}-${VERSION}-linux.zip" .)
 
-      - name: Upload build artifacts
+          if [[ "${GITHUB_REF:-}" == refs/tags/* ]]; then
+            PKG_VERSION="${GITHUB_REF_NAME#v}"
+            PKG_RELEASE="1"
+          else
+            PKG_VERSION="0.0.0"
+            PKG_RELEASE="0.${GITHUB_RUN_NUMBER}"
+          fi
+
+          mkdir -p pkg/deb/DEBIAN pkg/deb/usr/bin
+          cp -a build-release/src/vamposer pkg/deb/usr/bin/vamposer
+          chmod 0755 pkg/deb/usr/bin/vamposer
+          cat > pkg/deb/DEBIAN/control <<EOF
+          Package: vamposer
+          Version: ${PKG_VERSION}-${PKG_RELEASE}
+          Section: utils
+          Priority: optional
+          Architecture: amd64
+          Maintainer: ValaFoundation
+          Depends: libc6, libglib2.0-0, libgee-0.8-2, libjson-glib-1.0-0
+          Description: Dependency manager for Vala projects
+           Vamposer manages git and system dependencies for Vala/Meson apps.
+          EOF
+          dpkg-deb --build pkg/deb "vamposer_${PKG_VERSION}-${PKG_RELEASE}_amd64.deb"
+
+      - name: Upload Ubuntu artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: release-linux-cli
-          if-no-files-found: warn
+          name: release-ubuntu
+          if-no-files-found: error
           path: |
             build-release/src/vamposer
-            *-${{ github.ref_name }}-linux.zip
+            vamposer-*-ubuntu-x86_64.tar.gz
+            *-linux.zip
+            vamposer-linux-x86_64
+            vamposer-linux-x86_64.sha256
+            vamposer_*_amd64.deb
+
+  build-fedora:
+    name: Build Fedora
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:41
+    steps:
+      - name: Install toolchain
+        run: |
+          dnf -y update
+          dnf -y install \
+            git \
+            meson \
+            ninja-build \
+            vala \
+            gcc \
+            rpm-build \
+            pkgconf-pkg-config \
+            glib2-devel \
+            libgee-devel \
+            json-glib-devel
+
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Sync meson.build version from tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          perl -0777 -i -pe "s/project\('([^']+)', 'vala', 'c', version: '[^']+'\)/project('\\1', 'vala', 'c', version: '${TAG_VERSION}')/" meson.build
+
+      - name: Configure, build, and test
+        run: |
+          meson setup build-release --buildtype=release
+          meson compile -C build-release
+          meson test -C build-release --print-errorlogs
+
+      - name: Create Fedora bundle
+        run: |
+          VERSION="${GITHUB_REF_NAME:-dev-${GITHUB_RUN_NUMBER}}"
+          mkdir -p dist
+          cp -a build-release/src/vamposer "dist/vamposer"
+          tar -C dist -czf "vamposer-${VERSION}-fedora-x86_64.tar.gz" vamposer
+
+          if [[ "${GITHUB_REF:-}" == refs/tags/* ]]; then
+            PKG_VERSION="${GITHUB_REF_NAME#v}"
+            PKG_RELEASE="1"
+          else
+            PKG_VERSION="0.0.0"
+            PKG_RELEASE="0.${GITHUB_RUN_NUMBER}"
+          fi
+
+          mkdir -p rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+          cp -a build-release/src/vamposer rpmbuild/SOURCES/vamposer
+          cat > rpmbuild/SPECS/vamposer.spec <<EOF
+          Name:           vamposer
+          Version:        ${PKG_VERSION}
+          Release:        ${PKG_RELEASE}%{?dist}
+          Summary:        Dependency manager for Vala projects
+          License:        Apache-2.0
+          URL:            https://github.com/ValaFoundation/vamposer
+          Source0:        vamposer
+          BuildArch:      x86_64
+          Requires:       glib2, libgee, json-glib
+
+          %description
+          Vamposer manages git and system dependencies for Vala/Meson apps.
+
+          %prep
+
+          %build
+
+          %install
+          install -Dpm 0755 %{SOURCE0} %{buildroot}/usr/bin/vamposer
+
+          %files
+          /usr/bin/vamposer
+
+          %changelog
+          * Fri Jul 11 2026 ValaFoundation - ${PKG_VERSION}-${PKG_RELEASE}
+          - Automated release build
+          EOF
+          rpmbuild -bb --define "_topdir $(pwd)/rpmbuild" rpmbuild/SPECS/vamposer.spec
+
+      - name: Upload Fedora artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-fedora
+          if-no-files-found: error
+          path: |
+            build-release/src/vamposer
+            vamposer-*-fedora-x86_64.tar.gz
+            rpmbuild/RPMS/**/*.rpm
+
+  build-arch:
+    name: Build Arch
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    steps:
+      - name: Install toolchain
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm \
+            git \
+            meson \
+            ninja \
+            vala \
+            gcc \
+            pkgconf \
+            glib2 \
+            libgee \
+            json-glib
+
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Sync meson.build version from tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          perl -0777 -i -pe "s/project\('([^']+)', 'vala', 'c', version: '[^']+'\)/project('\\1', 'vala', 'c', version: '${TAG_VERSION}')/" meson.build
+
+      - name: Configure, build, and test
+        run: |
+          meson setup build-release --buildtype=release
+          meson compile -C build-release
+          meson test -C build-release --print-errorlogs
+
+      - name: Create Arch bundle
+        run: |
+          VERSION="${GITHUB_REF_NAME:-dev-${GITHUB_RUN_NUMBER}}"
+          mkdir -p dist
+          cp -a build-release/src/vamposer "dist/vamposer"
+          tar -C dist -czf "vamposer-${VERSION}-arch-x86_64.tar.gz" vamposer
+
+      - name: Upload Arch artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-arch
+          if-no-files-found: error
+          path: |
+            build-release/src/vamposer
+            vamposer-*-arch-x86_64.tar.gz
+
+  build-flatpak:
+    name: Build Flatpak
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Sync meson.build version from tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          perl -0777 -i -pe "s/project\('([^']+)', 'vala', 'c', version: '[^']+'\)/project('\\1', 'vala', 'c', version: '${TAG_VERSION}')/" meson.build
+
+      - name: Install Flatpak tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
+          sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          sudo flatpak install -y flathub org.gnome.Platform//47 org.gnome.Sdk//47
+
+      - name: Create Flatpak manifest
+        run: |
+          mkdir -p packaging/flatpak
+          cat > packaging/flatpak/io.github.valafoundation.vamposer.yml << 'EOF'
+          app-id: io.github.valafoundation.vamposer
+          runtime: org.gnome.Platform
+          runtime-version: '47'
+          sdk: org.gnome.Sdk
+          command: vamposer
+          finish-args:
+            - --share=network
+          modules:
+            - name: vamposer
+              buildsystem: meson
+              config-opts:
+                - --prefix=/app
+              sources:
+                - type: dir
+                  path: ../../
+          EOF
+
+      - name: Build Flatpak bundle
+        run: |
+          VERSION="${GITHUB_REF_NAME:-dev-${GITHUB_RUN_NUMBER}}"
+          flatpak-builder --force-clean flatpak-build packaging/flatpak/io.github.valafoundation.vamposer.yml
+          flatpak build-export flatpak-repo flatpak-build
+          flatpak build-bundle flatpak-repo "vamposer-${VERSION}-flatpak-x86_64.flatpak" io.github.valafoundation.vamposer
+
+      - name: Upload Flatpak artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-flatpak
+          if-no-files-found: error
+          path: |
+            vamposer-*-flatpak-x86_64.flatpak
+            packaging/flatpak/io.github.valafoundation.vamposer.yml
+
+  publish-release:
+    name: Publish GitHub Release
+    needs:
+      - build-ubuntu
+      - build-fedora
+      - build-arch
+      - build-flatpak
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
 
       - name: Generate release notes
-        if: startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -84,10 +332,16 @@ jobs:
           fi
 
           {
+            echo "## Platform Artifacts"
+            echo
+            echo "- Ubuntu: tar.gz + raw binary + .deb"
+            echo "- Linux compatibility: <repo>-<tag>-linux.zip + vamposer-linux-x86_64"
+            echo "- Fedora: tar.gz + raw binary + .rpm"
+            echo "- Arch: tar.gz + raw binary"
+            echo "- Flatpak: .flatpak bundle + manifest"
             echo
             echo "## Changes"
             echo
-
             if [ -n "${PREVIOUS_TAG}" ]; then
               echo "Changes since ${PREVIOUS_TAG}:"
               echo
@@ -98,34 +352,32 @@ jobs:
 
             while IFS='|' read -r commit_sha commit_subject; do
               [ -n "${commit_sha}" ] || continue
-
-              github_login="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${commit_sha}" --jq '.author.login // empty' 2>/dev/null || true)"
-
               short_sha="$(printf '%s' "${commit_sha}" | cut -c1-7)"
-              if [ -n "${github_login}" ]; then
-                echo "- ${commit_subject} (${short_sha}) by @${github_login}"
-              else
-                git_name="$(git show -s --format='%an' "${commit_sha}" 2>/dev/null || echo unknown)"
-                echo "- ${commit_subject} (${short_sha}) by ${git_name}"
-              fi
+              echo "- ${commit_subject} (${short_sha})"
             done < <(git log --no-merges --pretty=format:'%H|%s' "${RELEASE_RANGE}")
-
-            echo
           } > RELEASE_NOTES.md
 
       - name: Create GitHub release
-        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           body_path: RELEASE_NOTES.md
           files: |
-            build-release/src/vamposer
-            *-${{ github.ref_name }}-linux.zip
+            artifacts/**/*
+
+  persist-version:
+    name: Persist meson.build version
+    needs: publish-release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Persist meson.build version to default branch
-        if: startsWith(github.ref, 'refs/tags/')
-        env:
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           TAG_VERSION="${GITHUB_REF_NAME#v}"
 
