@@ -95,6 +95,9 @@ namespace AppTests {
                 var generated_path = Path.build_filename (project_dir, "subprojects", "vamposer.build");
                 assert (FileUtils.test (generated_path, FileTest.EXISTS));
 
+                var gitignore_path = Path.build_filename (project_dir, "subprojects", ".gitignore");
+                assert (FileUtils.test (gitignore_path, FileTest.EXISTS));
+
                 string contents;
                 try {
                     FileUtils.get_contents (generated_path, out contents);

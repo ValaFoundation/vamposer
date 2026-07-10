@@ -119,6 +119,13 @@ namespace Vamposer {
 
         private void ensure_subprojects_directory () throws Error {
             DirUtils.create_with_parents ("subprojects", 0755);
+
+            var gitignore_path = Path.build_filename ("subprojects", ".gitignore");
+            if (!FileUtils.test (gitignore_path, FileTest.EXISTS)) {
+                var gitignore_contents = "/*\n!/.gitignore\n!/*.wrap\n!/vamposer.build\n!/vamposer\n";
+                FileUtils.set_contents (gitignore_path, gitignore_contents);
+                log ("[Vamposer] Generated file: %s\n", gitignore_path);
+            }
         }
 
         private void check_system_dependencies (HashMap<string, string> system_dependencies) throws Error {
