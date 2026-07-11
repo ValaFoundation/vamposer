@@ -37,6 +37,12 @@ Verify installation:
 vamposer --help
 ```
 
+Self-upgrade the installed binary:
+
+```sh
+sudo vamposer self-upgrade
+```
+
 Manual uninstall:
 
 ```sh
@@ -64,6 +70,12 @@ Show CLI help:
 
 ```sh
 vamposer --help
+```
+
+Upgrade the installed binary:
+
+```sh
+sudo vamposer self-upgrade
 ```
 
 Add or update a dependency in config:

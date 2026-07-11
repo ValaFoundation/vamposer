@@ -6,6 +6,7 @@ namespace Vamposer {
         stdout.printf ("  vamposer --help\n");
         stdout.printf ("  vamposer init [path/to/vamposer.json]\n");
         stdout.printf ("  vamposer install [path/to/vamposer.json]\n");
+        stdout.printf ("  vamposer self-upgrade\n");
         stdout.printf ("  vamposer require <dependency> [revision] [path/to/vamposer.json]\n");
         stdout.printf ("  vamposer remove <dependency> [path/to/vamposer.json]\n");
         stdout.printf ("  vamposer update [dependency] [path/to/vamposer.json]\n");
@@ -48,6 +49,15 @@ namespace Vamposer {
             try {
                 var installer = new Installer ();
                 installer.install (config_path);
+                return 0;
+            } catch (Error e) {
+                stderr.printf ("[Vamposer] Error: %s\n", e.message);
+                return 1;
+            }
+        case "self-upgrade":
+            try {
+                var installer = new Installer ();
+                installer.self_upgrade (args[0]);
                 return 0;
             } catch (Error e) {
                 stderr.printf ("[Vamposer] Error: %s\n", e.message);

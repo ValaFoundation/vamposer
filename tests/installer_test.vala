@@ -10,6 +10,7 @@ namespace AppTests {
             add_test ("install_fails_on_missing_system_dependency", test_install_fails_on_missing_system_dep);
             add_test ("require_adds_dependency_to_config", test_require_adds_dependency_to_config);
             add_test ("remove_deletes_dependency_from_config", test_remove_deletes_dependency_from_config);
+            add_test ("self_upgrade_fails_for_unknown_executable", test_self_upgrade_fails_for_unknown_executable);
             add_test ("update_fails_when_named_dependency_is_missing", test_update_missing_named_dependency);
         }
 
@@ -281,6 +282,23 @@ namespace AppTests {
             } finally {
                 Environment.set_current_dir (old_cwd);
             }
+        }
+
+        public void test_self_upgrade_fails_for_unknown_executable () {
+            bool failed = false;
+
+            try {
+                Installer.logs_enabled = false;
+                var installer = new Installer ();
+                installer.self_upgrade ("vamposer-this-command-should-not-exist");
+            } catch (Error e) {
+                failed = true;
+                assert (e.message.contains ("Unable to locate executable in PATH"));
+            } finally {
+                Installer.logs_enabled = true;
+            }
+
+            assert (failed);
         }
     }
 }

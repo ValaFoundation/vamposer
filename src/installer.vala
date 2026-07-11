@@ -21,6 +21,7 @@ namespace Vamposer {
 
     public class Installer : Object {
         public static bool logs_enabled { get; set; default = true; }
+        private const string RELEASE_DOWNLOAD_BASE = "https://github.com/ValaFoundation/vamposer/releases/latest/download";
 
         public void init_config (string config_path) throws Error {
             ensure_subprojects_directory ();
@@ -36,6 +37,42 @@ namespace Vamposer {
 
         public void install (string config_path) throws Error {
             run_install (config_path, null, false);
+        }
+
+        public void self_upgrade (string executable_name) throws Error {
+            var target_path = resolve_executable_path (executable_name);
+
+            string temp_dir;
+            try {
+                temp_dir = DirUtils.make_tmp ("vamposer-upgrade-XXXXXX");
+            } catch (FileError e) {
+                throw new IOError.FAILED ("Unable to create temporary directory: %s".printf (e.message));
+            }
+
+            try {
+                var binary_url = "%s/vamposer-linux".printf (RELEASE_DOWNLOAD_BASE);
+                var checksum_url = "%s/vamposer-linux.sha256".printf (RELEASE_DOWNLOAD_BASE);
+                var downloaded_path = Path.build_filename (temp_dir, "vamposer-linux");
+                var checksum_path = Path.build_filename (temp_dir, "vamposer-linux.sha256");
+
+                run_command (new string[] {"curl", "-fL", "-o", downloaded_path, binary_url}, "download latest Vamposer binary");
+                run_command (new string[] {"curl", "-fL", "-o", checksum_path, checksum_url}, "download latest Vamposer checksum");
+
+                var expected_checksum = read_checksum_value (checksum_path);
+                var actual_checksum = calculate_sha256 (downloaded_path);
+                if (expected_checksum != actual_checksum) {
+                    throw new IOError.FAILED ("Downloaded Vamposer checksum mismatch");
+                }
+
+                run_command (new string[] {"install", "-m", "0755", downloaded_path, target_path}, "install upgraded Vamposer binary");
+                log ("[Vamposer] Upgraded executable: %s\n", target_path);
+            } finally {
+                try {
+                    remove_path_if_exists (temp_dir);
+                } catch (Error e) {
+                    log ("[Vamposer] Cleanup warning: %s\n", e.message);
+                }
+            }
         }
 
         public void require_dependency (string config_path, string source_id, string revision = "*") throws Error {
@@ -115,6 +152,30 @@ namespace Vamposer {
             }
 
             return resolved_dependencies;
+        }
+
+        private string resolve_executable_path (string executable_name) throws Error {
+            var trimmed = executable_name.strip ();
+            if (trimmed == "") {
+                throw new IOError.INVALID_ARGUMENT ("Executable name must not be empty");
+            }
+
+            if (trimmed.contains ("/") || Path.is_absolute (trimmed)) {
+                return trimmed;
+            }
+
+            string resolved;
+            try {
+                resolved = run_command_stdout (new string[] {"which", trimmed}, "resolve executable path");
+            } catch (Error e) {
+                throw new IOError.NOT_FOUND ("Unable to locate executable in PATH: %s".printf (trimmed));
+            }
+
+            if (resolved == "") {
+                throw new IOError.NOT_FOUND ("Unable to locate executable in PATH: %s".printf (trimmed));
+            }
+
+            return resolved.split ("\n")[0].strip ();
         }
 
         private void ensure_subprojects_directory () throws Error {
@@ -240,6 +301,10 @@ namespace Vamposer {
         }
 
         private void run_command (string[] argv, string label) throws Error {
+            run_command_stdout (argv, label);
+        }
+
+        private string run_command_stdout (string[] argv, string label) throws Error {
             string? std_out;
             string? std_err;
             int status = 0;
@@ -257,6 +322,45 @@ namespace Vamposer {
                 }
                 throw new IOError.FAILED ("%s failed: %s".printf (label, err));
             }
+
+            return std_out != null ? std_out.strip () : "";
+        }
+
+        private string read_checksum_value (string checksum_path) throws Error {
+            string contents;
+            try {
+                FileUtils.get_contents (checksum_path, out contents);
+            } catch (FileError e) {
+                throw new IOError.FAILED ("Unable to read checksum file: %s".printf (e.message));
+            }
+
+            foreach (var line in contents.split ("\n")) {
+                var trimmed = line.strip ();
+                if (trimmed == "") {
+                    continue;
+                }
+
+                foreach (var field in trimmed.split (" ")) {
+                    var token = field.strip ();
+                    if (token != "") {
+                        return token;
+                    }
+                }
+            }
+
+            throw new IOError.FAILED ("Checksum file is empty or invalid");
+        }
+
+        private string calculate_sha256 (string file_path) throws Error {
+            var output = run_command_stdout (new string[] {"sha256sum", file_path}, "calculate sha256 checksum");
+            foreach (var field in output.split (" ")) {
+                var token = field.strip ();
+                if (token != "") {
+                    return token;
+                }
+            }
+
+            throw new IOError.FAILED ("Unable to parse sha256sum output");
         }
 
         private void write_wrap_file (ResolvedDependency dependency) throws Error {
