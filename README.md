@@ -268,6 +268,51 @@ Build dependencies:
 - Vala packages: `glib-2.0`, `gee-0.8`, `json-glib-1.0`
 - runtime tools used by dependency operations: `git`, `pkg-config`
 
+Install dependencies (examples):
+
+Ubuntu/Debian:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y \
+	git \
+	meson \
+	ninja-build \
+	valac \
+	pkg-config \
+	libglib2.0-dev \
+	libgee-0.8-dev \
+	libjson-glib-dev
+```
+
+Fedora:
+
+```bash
+sudo dnf install -y \
+	git \
+	meson \
+	ninja-build \
+	vala \
+	pkgconf-pkg-config \
+	glib2-devel \
+	libgee-devel \
+	json-glib-devel
+```
+
+Arch Linux:
+
+```bash
+sudo pacman -S --needed \
+	git \
+	meson \
+	ninja \
+	vala \
+	pkgconf \
+	glib2 \
+	libgee \
+	json-glib
+```
+
 ```bash
 meson setup builddir
 meson compile -C builddir
