@@ -50,9 +50,9 @@ jobs:
           VERSION="${GITHUB_REF_NAME:-dev-${GITHUB_RUN_NUMBER}}"
           mkdir -p dist
           cp -a build-release/src/vamposer "dist/vamposer"
-          cp -a build-release/src/vamposer "vamposer-linux-x86_64"
-          sha256sum "vamposer-linux-x86_64" > "vamposer-linux-x86_64.sha256"
-          tar -C dist -czf "vamposer-${VERSION}-ubuntu-x86_64.tar.gz" vamposer
+          cp -a build-release/src/vamposer "vamposer-linux"
+          sha256sum "vamposer-linux" > "vamposer-linux.sha256"
+          tar -C dist -czf "vamposer-${VERSION}-ubuntu.tar.gz" vamposer
           (cd dist && zip -r "../${PROJECT_SLUG}-${VERSION}-linux.zip" .)
 
           if [[ "${GITHUB_REF:-}" == refs/tags/* ]]; then
@@ -86,10 +86,10 @@ jobs:
           if-no-files-found: error
           path: |
             build-release/src/vamposer
-            vamposer-*-ubuntu-x86_64.tar.gz
+            vamposer-*-ubuntu.tar.gz
             *-linux.zip
-            vamposer-linux-x86_64
-            vamposer-linux-x86_64.sha256
+            vamposer-linux
+            vamposer-linux.sha256
             vamposer_*_amd64.deb
 
   build-fedora:
@@ -139,7 +139,7 @@ jobs:
           VERSION="${GITHUB_REF_NAME:-dev-${GITHUB_RUN_NUMBER}}"
           mkdir -p dist
           cp -a build-release/src/vamposer "dist/vamposer"
-          tar -C dist -czf "vamposer-${VERSION}-fedora${{ matrix.fedora_version }}-x86_64.tar.gz" vamposer
+          tar -C dist -czf "vamposer-${VERSION}-fedora${{ matrix.fedora_version }}.tar.gz" vamposer
 
           if [[ "${GITHUB_REF:-}" == refs/tags/* ]]; then
             PKG_VERSION="${GITHUB_REF_NAME#v}"
@@ -190,7 +190,7 @@ jobs:
           if-no-files-found: error
           path: |
             build-release/src/vamposer
-            vamposer-*-fedora${{ matrix.fedora_version }}-x86_64.tar.gz
+            vamposer-*-fedora${{ matrix.fedora_version }}.tar.gz
             rpmbuild/RPMS/**/*.rpm
 
   build-arch:
@@ -235,7 +235,7 @@ jobs:
           VERSION="${GITHUB_REF_NAME:-dev-${GITHUB_RUN_NUMBER}}"
           mkdir -p dist
           cp -a build-release/src/vamposer "dist/vamposer"
-          tar -C dist -czf "vamposer-${VERSION}-arch-x86_64.tar.gz" vamposer
+          tar -C dist -czf "vamposer-${VERSION}-arch.tar.gz" vamposer
 
       - name: Upload Arch artifacts
         uses: actions/upload-artifact@v7
@@ -244,7 +244,7 @@ jobs:
           if-no-files-found: error
           path: |
             build-release/src/vamposer
-            vamposer-*-arch-x86_64.tar.gz
+            vamposer-*-arch.tar.gz
 
   build-flatpak:
     name: Build Flatpak
@@ -297,7 +297,7 @@ jobs:
           VERSION="${GITHUB_REF_NAME:-dev-${GITHUB_RUN_NUMBER}}"
           flatpak-builder --force-clean flatpak-build packaging/flatpak/io.github.valafoundation.vamposer.yml
           flatpak build-export flatpak-repo flatpak-build
-          flatpak build-bundle flatpak-repo "vamposer-${VERSION}-flatpak-x86_64.flatpak" io.github.valafoundation.vamposer
+          flatpak build-bundle flatpak-repo "vamposer-${VERSION}-flatpak.flatpak" io.github.valafoundation.vamposer
 
       - name: Upload Flatpak artifacts
         uses: actions/upload-artifact@v7
@@ -305,7 +305,7 @@ jobs:
           name: release-flatpak
           if-no-files-found: error
           path: |
-            vamposer-*-flatpak-x86_64.flatpak
+            vamposer-*-flatpak.flatpak
             packaging/flatpak/io.github.valafoundation.vamposer.yml
 
   publish-release:
@@ -372,16 +372,16 @@ jobs:
           generate_release_notes: true
           append_body: true
           files: |
-            artifacts/release-ubuntu/vamposer-linux-x86_64
-            artifacts/release-ubuntu/vamposer-linux-x86_64.sha256
+            artifacts/release-ubuntu/vamposer-linux
+            artifacts/release-ubuntu/vamposer-linux.sha256
             artifacts/release-ubuntu/*-linux.zip
             artifacts/release-ubuntu/vamposer_*_amd64.deb
-            artifacts/release-ubuntu/vamposer-*-ubuntu-x86_64.tar.gz
-            artifacts/release-fedora-*/vamposer-*-fedora*-x86_64.tar.gz
+            artifacts/release-ubuntu/vamposer-*-ubuntu.tar.gz
+            artifacts/release-fedora-*/vamposer-*-fedora*.tar.gz
             artifacts/release-fedora-*/**/*.rpm
-            artifacts/release-arch/vamposer-*-arch-x86_64.tar.gz
+            artifacts/release-arch/vamposer-*-arch.tar.gz
             artifacts/release-arch/src/vamposer
-            artifacts/release-flatpak/vamposer-*-flatpak-x86_64.flatpak
+            artifacts/release-flatpak/vamposer-*-flatpak.flatpak
 
   persist-version:
     name: Persist meson.build version

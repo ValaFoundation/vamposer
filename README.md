@@ -22,13 +22,13 @@ Dependency manager for Vala projects inspired by Composer/Go modules and integra
 Manual install (curl + chmod):
 
 ```sh
-curl -fL -o vamposer-linux-x86_64 \
-	https://github.com/ValaFoundation/vamposer/releases/latest/download/vamposer-linux-x86_64
-curl -fL -o vamposer-linux-x86_64.sha256 \
-	https://github.com/ValaFoundation/vamposer/releases/latest/download/vamposer-linux-x86_64.sha256
-sha256sum -c vamposer-linux-x86_64.sha256
-chmod +x vamposer-linux-x86_64
-sudo install -m 0755 vamposer-linux-x86_64 /usr/local/bin/vamposer
+curl -fL -o vamposer-linux \
+	https://github.com/ValaFoundation/vamposer/releases/latest/download/vamposer-linux
+curl -fL -o vamposer-linux.sha256 \
+	https://github.com/ValaFoundation/vamposer/releases/latest/download/vamposer-linux.sha256
+sha256sum -c vamposer-linux.sha256
+chmod +x vamposer-linux
+sudo install -m 0755 vamposer-linux /usr/local/bin/vamposer
 ```
 
 Verify installation:
@@ -101,13 +101,15 @@ vamposer install path/to/vamposer.json
 Tag-based release workflow (`v*`) publishes:
 
 - compatibility ZIP (`<repo-name>-<tag>-linux.zip`)
-- standalone Linux binary (`vamposer-linux-x86_64`) + checksum (`.sha256`)
+- standalone Linux binary (`vamposer-linux`) + checksum (`.sha256`)
 - Debian package (`vamposer_<version>_amd64.deb`)
 - RPM package (`vamposer-<version>-*.x86_64.rpm`)
-- Ubuntu bundle (`vamposer-<tag>-ubuntu-x86_64.tar.gz`) + raw CLI binary
-- Fedora bundles (`vamposer-<tag>-fedora41-x86_64.tar.gz` ... `fedora44`) + raw CLI binary
-- Arch bundle (`vamposer-<tag>-arch-x86_64.tar.gz`) + raw CLI binary
-- Flatpak bundle (`vamposer-<tag>-flatpak-x86_64.flatpak`)
+- Ubuntu bundle (`vamposer-<tag>-ubuntu.tar.gz`) + raw CLI binary
+- Fedora bundles (`vamposer-<tag>-fedora41.tar.gz` ... `fedora44`) + raw CLI binary
+- Arch bundle (`vamposer-<tag>-arch.tar.gz`) + raw CLI binary
+- Flatpak bundle (`vamposer-<tag>-flatpak.flatpak`)
+
+Current official release artifacts target `x86_64` only. Support for additional architectures will be considered once there is a concrete user need or issue requesting it.
 
 ## Config format
 
