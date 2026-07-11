@@ -364,6 +364,9 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           body_path: RELEASE_NOTES.md
+          preserve_order: true
+          generate_release_notes: true
+          append_body: true
           files: |
             artifacts/release-ubuntu/vamposer-linux-x86_64
             artifacts/release-ubuntu/vamposer-linux-x86_64.sha256
