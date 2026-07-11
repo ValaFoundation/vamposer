@@ -11,6 +11,12 @@ Dependency manager for Vala projects inspired by Composer/Go modules and integra
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ValaFoundation/vamposer/ci.yml?style=for-the-badge)
 ![GitHub commits since latest release](https://img.shields.io/github/commits-since/ValaFoundation/vamposer/latest?style=for-the-badge)
 
+![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/ValaFoundation/vamposer?style=for-the-badge)
+![GitHub Issues or Pull Requests](https://img.shields.io/github/issues-closed/ValaFoundation/vamposer?style=for-the-badge)
+![GitHub Issues or Pull Requests](https://img.shields.io/github/issues-pr/ValaFoundation/vamposer?style=for-the-badge)
+![GitHub Issues or Pull Requests](https://img.shields.io/github/issues-pr-closed/ValaFoundation/vamposer?style=for-the-badge)
+
+
 
 ## What it does
 
