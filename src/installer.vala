@@ -41,6 +41,8 @@ namespace Vamposer {
 
         public void self_upgrade (string executable_name) throws Error {
             var target_path = resolve_executable_path (executable_name);
+            var release_binary_name = get_release_binary_name ();
+            var release_checksum_name = "%s.sha256".printf (release_binary_name);
 
             string temp_dir;
             try {
@@ -49,11 +51,12 @@ namespace Vamposer {
                 throw new IOError.FAILED ("Unable to create temporary directory: %s".printf (e.message));
             }
 
+            var cleanup_temp_dir = true;
             try {
-                var binary_url = "%s/vamposer-linux".printf (RELEASE_DOWNLOAD_BASE);
-                var checksum_url = "%s/vamposer-linux.sha256".printf (RELEASE_DOWNLOAD_BASE);
-                var downloaded_path = Path.build_filename (temp_dir, "vamposer-linux");
-                var checksum_path = Path.build_filename (temp_dir, "vamposer-linux.sha256");
+                var binary_url = "%s/%s".printf (RELEASE_DOWNLOAD_BASE, release_binary_name);
+                var checksum_url = "%s/%s".printf (RELEASE_DOWNLOAD_BASE, release_checksum_name);
+                var downloaded_path = Path.build_filename (temp_dir, release_binary_name);
+                var checksum_path = Path.build_filename (temp_dir, release_checksum_name);
 
                 run_command (new string[] {"curl", "-fL", "-o", downloaded_path, binary_url}, "download latest Vamposer binary");
                 run_command (new string[] {"curl", "-fL", "-o", checksum_path, checksum_url}, "download latest Vamposer checksum");
@@ -64,13 +67,21 @@ namespace Vamposer {
                     throw new IOError.FAILED ("Downloaded Vamposer checksum mismatch");
                 }
 
+#if WINDOWS
+                schedule_windows_replacement (downloaded_path, target_path, temp_dir);
+                cleanup_temp_dir = false;
+                log ("[Vamposer] Upgrade scheduled for executable: %s\n", target_path);
+#else
                 run_command (new string[] {"install", "-m", "0755", downloaded_path, target_path}, "install upgraded Vamposer binary");
                 log ("[Vamposer] Upgraded executable: %s\n", target_path);
+#endif
             } finally {
-                try {
-                    remove_path_if_exists (temp_dir);
-                } catch (Error e) {
-                    log ("[Vamposer] Cleanup warning: %s\n", e.message);
+                if (cleanup_temp_dir) {
+                    try {
+                        remove_path_if_exists (temp_dir);
+                    } catch (Error e) {
+                        log ("[Vamposer] Cleanup warning: %s\n", e.message);
+                    }
                 }
             }
         }
@@ -154,6 +165,14 @@ namespace Vamposer {
             return resolved_dependencies;
         }
 
+        private string get_release_binary_name () {
+#if WINDOWS
+            return "vamposer.exe";
+#else
+            return "vamposer-linux";
+#endif
+        }
+
         private string resolve_executable_path (string executable_name) throws Error {
             var trimmed = executable_name.strip ();
             if (trimmed == "") {
@@ -166,7 +185,11 @@ namespace Vamposer {
 
             string resolved;
             try {
+#if WINDOWS
+                resolved = run_command_stdout (new string[] {"where", trimmed}, "resolve executable path");
+#else
                 resolved = run_command_stdout (new string[] {"which", trimmed}, "resolve executable path");
+#endif
             } catch (Error e) {
                 throw new IOError.NOT_FOUND ("Unable to locate executable in PATH: %s".printf (trimmed));
             }
@@ -177,6 +200,40 @@ namespace Vamposer {
 
             return resolved.split ("\n")[0].strip ();
         }
+
+#if WINDOWS
+        private void schedule_windows_replacement (string downloaded_path, string target_path, string temp_dir) throws Error {
+            var script_path = Path.build_filename (temp_dir, "replace-vamposer.ps1");
+            var quoted_downloaded = powershell_quote (downloaded_path);
+            var quoted_target = powershell_quote (target_path);
+            var quoted_temp_dir = powershell_quote (temp_dir);
+            var script_contents = "Start-Sleep -Seconds 2\n"
+                + "Copy-Item -Force '%s' '%s'\n".printf (quoted_downloaded, quoted_target)
+                + "Remove-Item -Force '%s'\n".printf (quoted_downloaded)
+                + "Remove-Item -Recurse -Force '%s'\n".printf (quoted_temp_dir);
+
+            FileUtils.set_contents (script_path, script_contents);
+            run_command (
+                new string[] {
+                    "cmd",
+                    "/c",
+                    "start",
+                    "",
+                    "powershell",
+                    "-NoProfile",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-File",
+                    script_path,
+                },
+                "schedule Windows self-upgrade"
+            );
+        }
+
+        private string powershell_quote (string value) {
+            return value.replace ("'", "''");
+        }
+#endif
 
         private void ensure_subprojects_directory () throws Error {
             DirUtils.create_with_parents ("subprojects", 0755);
@@ -352,6 +409,18 @@ namespace Vamposer {
         }
 
         private string calculate_sha256 (string file_path) throws Error {
+#if WINDOWS
+            var output = run_command_stdout (
+                new string[] {
+                    "powershell",
+                    "-NoProfile",
+                    "-Command",
+                    "(Get-FileHash -Algorithm SHA256 -LiteralPath '%s').Hash".printf (powershell_quote (file_path)),
+                },
+                "calculate sha256 checksum"
+            );
+            return output.down ();
+#else
             var output = run_command_stdout (new string[] {"sha256sum", file_path}, "calculate sha256 checksum");
             foreach (var field in output.split (" ")) {
                 var token = field.strip ();
@@ -361,6 +430,7 @@ namespace Vamposer {
             }
 
             throw new IOError.FAILED ("Unable to parse sha256sum output");
+#endif
         }
 
         private void write_wrap_file (ResolvedDependency dependency) throws Error {
