@@ -93,10 +93,14 @@ jobs:
             vamposer_*_amd64.deb
 
   build-fedora:
-    name: Build Fedora
+    name: Build Fedora ${{ matrix.fedora_version }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        fedora_version: [41, 42, 43, 44]
     container:
-      image: fedora:41
+      image: fedora:${{ matrix.fedora_version }}
     steps:
       - name: Install toolchain
         run: |
@@ -135,7 +139,7 @@ jobs:
           VERSION="${GITHUB_REF_NAME:-dev-${GITHUB_RUN_NUMBER}}"
           mkdir -p dist
           cp -a build-release/src/vamposer "dist/vamposer"
-          tar -C dist -czf "vamposer-${VERSION}-fedora-x86_64.tar.gz" vamposer
+          tar -C dist -czf "vamposer-${VERSION}-fedora${{ matrix.fedora_version }}-x86_64.tar.gz" vamposer
 
           if [[ "${GITHUB_REF:-}" == refs/tags/* ]]; then
             PKG_VERSION="${GITHUB_REF_NAME#v}"
@@ -182,11 +186,11 @@ jobs:
       - name: Upload Fedora artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: release-fedora
+          name: release-fedora-${{ matrix.fedora_version }}
           if-no-files-found: error
           path: |
             build-release/src/vamposer
-            vamposer-*-fedora-x86_64.tar.gz
+            vamposer-*-fedora${{ matrix.fedora_version }}-x86_64.tar.gz
             rpmbuild/RPMS/**/*.rpm
 
   build-arch:
@@ -373,8 +377,8 @@ jobs:
             artifacts/release-ubuntu/*-linux.zip
             artifacts/release-ubuntu/vamposer_*_amd64.deb
             artifacts/release-ubuntu/vamposer-*-ubuntu-x86_64.tar.gz
-            artifacts/release-fedora/vamposer-*-fedora-x86_64.tar.gz
-            artifacts/release-fedora/**/*.rpm
+            artifacts/release-fedora-*/vamposer-*-fedora*-x86_64.tar.gz
+            artifacts/release-fedora-*/**/*.rpm
             artifacts/release-arch/vamposer-*-arch-x86_64.tar.gz
             artifacts/release-arch/src/vamposer
             artifacts/release-flatpak/vamposer-*-flatpak-x86_64.flatpak

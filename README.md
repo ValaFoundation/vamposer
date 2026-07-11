@@ -105,7 +105,7 @@ Tag-based release workflow (`v*`) publishes:
 - Debian package (`vamposer_<version>_amd64.deb`)
 - RPM package (`vamposer-<version>-*.x86_64.rpm`)
 - Ubuntu bundle (`vamposer-<tag>-ubuntu-x86_64.tar.gz`) + raw CLI binary
-- Fedora bundle (`vamposer-<tag>-fedora-x86_64.tar.gz`) + raw CLI binary
+- Fedora bundles (`vamposer-<tag>-fedora41-x86_64.tar.gz` ... `fedora44`) + raw CLI binary
 - Arch bundle (`vamposer-<tag>-arch-x86_64.tar.gz`) + raw CLI binary
 - Flatpak bundle (`vamposer-<tag>-flatpak-x86_64.flatpak`)
 
