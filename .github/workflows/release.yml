@@ -72,7 +72,7 @@ jobs:
           Section: utils
           Priority: optional
           Architecture: amd64
-          Maintainer: ValaFoundation
+          Maintainer: ValaFoundation <team@valafoundation.github.io>
           Depends: libc6, libglib2.0-0, libgee-0.8-2, libjson-glib-1.0-0
           Description: Dependency manager for Vala projects
            Vamposer manages git and system dependencies for Vala/Meson apps.
@@ -153,6 +153,8 @@ jobs:
           Release:        ${PKG_RELEASE}%{?dist}
           Summary:        Dependency manager for Vala projects
           License:        Apache-2.0
+          Packager:       ValaFoundation
+          Vendor:         ValaFoundation
           URL:            https://github.com/ValaFoundation/vamposer
           Source0:        vamposer
           BuildArch:      x86_64
@@ -271,6 +273,8 @@ jobs:
           runtime-version: '47'
           sdk: org.gnome.Sdk
           command: vamposer
+          build-commands:
+            - install -Dm644 packaging/flatpak/io.github.valafoundation.vamposer.metainfo.xml /app/share/metainfo/io.github.valafoundation.vamposer.metainfo.xml
           finish-args:
             - --share=network
           modules:
@@ -363,7 +367,17 @@ jobs:
         with:
           body_path: RELEASE_NOTES.md
           files: |
-            artifacts/**/*
+            artifacts/release-ubuntu/vamposer-linux-x86_64
+            artifacts/release-ubuntu/vamposer-linux-x86_64.sha256
+            artifacts/release-ubuntu/*-linux.zip
+            artifacts/release-ubuntu/vamposer_*_amd64.deb
+            artifacts/release-ubuntu/vamposer-*-ubuntu-x86_64.tar.gz
+            artifacts/release-fedora/vamposer-*-fedora-x86_64.tar.gz
+            artifacts/release-fedora/**/*.rpm
+            artifacts/release-arch/vamposer-*-arch-x86_64.tar.gz
+            artifacts/release-arch/src/vamposer
+            artifacts/release-flatpak/vamposer-*-flatpak-x86_64.flatpak
+            artifacts/release-flatpak/packaging/flatpak/io.github.valafoundation.vamposer.yml
 
   persist-version:
     name: Persist meson.build version
