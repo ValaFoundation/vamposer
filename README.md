@@ -37,6 +37,13 @@ Verify installation:
 vamposer --help
 ```
 
+Manual uninstall:
+
+```sh
+sudo rm -f /usr/local/bin/vamposer
+hash -r
+```
+
 Initialize a new project config:
 
 ```sh
