@@ -32,7 +32,7 @@ namespace AppTests {
 
             var resolved = DependencyResolver.resolve ("github.com/ValaFoundation/testcases", "master");
             assert (resolved.project_name == "testcases");
-            assert (resolved.local_directory == "subprojects/testcases");
+            assert (resolved.local_directory == Path.build_filename ("subprojects", "testcases"));
         }
     }
 }
