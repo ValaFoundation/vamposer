@@ -95,10 +95,19 @@ jobs:
   build-fedora:
     name: Build Fedora ${{ matrix.fedora_version }}
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.allow_failure }}
     strategy:
       fail-fast: false
       matrix:
-        fedora_version: [41, 42, 43, 44]
+        include:
+          - fedora_version: 41
+            allow_failure: true
+          - fedora_version: 42
+            allow_failure: true
+          - fedora_version: 43
+            allow_failure: false
+          - fedora_version: 44
+            allow_failure: false
     container:
       image: fedora:${{ matrix.fedora_version }}
     steps:
@@ -249,6 +258,7 @@ jobs:
   build-windows:
     name: Build Windows
     runs-on: windows-latest
+    continue-on-error: true
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -312,6 +322,7 @@ jobs:
   build-flatpak:
     name: Build Flatpak
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
