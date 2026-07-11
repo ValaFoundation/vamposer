@@ -422,15 +422,17 @@ jobs:
             echo "## Changes"
             echo
             if [ -n "${PREVIOUS_TAG}" ]; then
-              echo "Changes since ${PREVIOUS_TAG}:"
+              echo "From ${PREVIOUS_TAG} to ${CURRENT_TAG}:"
               echo
             else
               echo "Initial release changes:"
               echo
             fi
 
+            changes_found=false
             while IFS='|' read -r commit_sha commit_subject; do
               [ -n "${commit_sha}" ] || continue
+              changes_found=true
               github_login="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${commit_sha}" --jq '.author.login // empty' 2>/dev/null || true)"
               short_sha="$(printf '%s' "${commit_sha}" | cut -c1-7)"
               if [ -n "${github_login}" ]; then
@@ -439,7 +441,11 @@ jobs:
                 git_name="$(git show -s --format='%an' "${commit_sha}" 2>/dev/null || echo unknown)"
                 echo "- ${commit_subject} (${short_sha}) by ${git_name}"
               fi
-            done < <(git log --no-merges --pretty=format:'%H|%s' "${RELEASE_RANGE}")
+            done < <(git log --pretty=format:'%H|%s' "${RELEASE_RANGE}")
+
+            if [ "${changes_found}" = false ]; then
+              echo "- No commits found in ${RELEASE_RANGE}."
+            fi
           } > RELEASE_NOTES.md
 
       - name: Create GitHub release

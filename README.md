@@ -23,7 +23,7 @@ Dependency manager for Vala projects inspired by Composer/Go modules and integra
 
 Manual install (curl + chmod):
 
-```sh
+```bash
 curl -fL -o vamposer-linux \
 	https://github.com/ValaFoundation/vamposer/releases/latest/download/vamposer-linux
 curl -fL -o vamposer-linux.sha256 \
@@ -35,19 +35,19 @@ sudo install -m 0755 vamposer-linux /usr/local/bin/vamposer
 
 Verify installation:
 
-```sh
+```bash
 vamposer --help
 ```
 
 Self-upgrade the installed binary:
 
-```sh
+```bash
 sudo vamposer self-upgrade
 ```
 
 Manual uninstall:
 
-```sh
+```bash
 sudo rm -f /usr/local/bin/vamposer
 hash -r
 ```
@@ -103,59 +103,59 @@ Remove-Item -Recurse -Force $InstallDir
 
 Initialize a new project config:
 
-```sh
+```bash
 vamposer init
 ```
 
 Initialize with custom config path:
 
-```sh
+```bash
 vamposer init path/to/vamposer.json
 ```
 
-```sh
+```bash
 vamposer install
 ```
 
 Show CLI help:
 
-```sh
+```bash
 vamposer --help
 ```
 
 Upgrade the installed binary:
 
-```sh
+```bash
 sudo vamposer self-upgrade
 ```
 
 Add or update a dependency in config:
 
-```sh
+```bash
 vamposer require github.com/ValaFoundation/testcases master
 ```
 
 Remove a dependency from config:
 
-```sh
+```bash
 vamposer remove github.com/ValaFoundation/testcases
 ```
 
 Force refresh all dependencies (re-clone):
 
-```sh
+```bash
 vamposer update
 ```
 
 Force refresh one dependency:
 
-```sh
+```bash
 vamposer update github.com/ValaFoundation/testcases
 ```
 
 Custom config path:
 
-```sh
+```bash
 vamposer install path/to/vamposer.json
 ```
 
@@ -249,7 +249,7 @@ Build dependencies:
 - Vala packages: `glib-2.0`, `gee-0.8`, `json-glib-1.0`
 - runtime tools used by dependency operations: `git`, `pkg-config`
 
-```sh
+```bash
 meson setup builddir
 meson compile -C builddir
 ```
@@ -268,7 +268,7 @@ Test dependencies:
 - `vala_testcases` (resolved from system if present, otherwise from `subprojects/vala_testcases` fallback)
 - all Build dependencies above
 
-```sh
+```bash
 meson test -C builddir --verbose
 ```
 
