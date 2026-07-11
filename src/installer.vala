@@ -300,7 +300,7 @@ namespace Vamposer {
                 throw new IOError.FAILED ("Unable to execute pkg-config: %s".printf (e.message));
             }
 
-            return Process.if_exited (status) && Process.exit_status (status) == 0;
+            return status == 0;
         }
 
         private void sync_dependency (ResolvedDependency dependency, bool force_reclone) throws Error {
@@ -372,7 +372,7 @@ namespace Vamposer {
                 throw new IOError.FAILED ("Unable to execute command '%s': %s".printf (label, e.message));
             }
 
-            if (!Process.if_exited (status) || Process.exit_status (status) != 0) {
+            if (status != 0) {
                 var err = std_err != null ? std_err.strip () : "";
                 if (err == "") {
                     err = "command returned a non-zero exit code";

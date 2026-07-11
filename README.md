@@ -31,9 +31,39 @@ chmod +x vamposer-linux
 sudo install -m 0755 vamposer-linux /usr/local/bin/vamposer
 ```
 
+Manual install on Windows (PowerShell):
+
+```powershell
+$InstallDir = Join-Path $env:LOCALAPPDATA 'Programs\Vamposer'
+New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+
+$ExePath = Join-Path $InstallDir 'vamposer.exe'
+$ChecksumPath = Join-Path $InstallDir 'vamposer.exe.sha256'
+
+Invoke-WebRequest -Uri 'https://github.com/ValaFoundation/vamposer/releases/latest/download/vamposer.exe' -OutFile $ExePath
+Invoke-WebRequest -Uri 'https://github.com/ValaFoundation/vamposer/releases/latest/download/vamposer.exe.sha256' -OutFile $ChecksumPath
+
+$ExpectedHash = (Get-Content $ChecksumPath).Split(' ')[0].Trim().ToLower()
+$ActualHash = (Get-FileHash -Algorithm SHA256 $ExePath).Hash.ToLower()
+if ($ExpectedHash -ne $ActualHash) {
+	throw 'Checksum verification failed.'
+}
+
+$UserPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+if (($UserPath -split ';') -notcontains $InstallDir) {
+	[Environment]::SetEnvironmentVariable('Path', ($UserPath.TrimEnd(';') + ';' + $InstallDir), 'User')
+}
+```
+
 Verify installation:
 
 ```sh
+vamposer --help
+```
+
+Verify installation on Windows (new terminal):
+
+```powershell
 vamposer --help
 ```
 
@@ -43,11 +73,26 @@ Self-upgrade the installed binary:
 sudo vamposer self-upgrade
 ```
 
+Self-upgrade on Windows:
+
+```powershell
+vamposer self-upgrade
+```
+
 Manual uninstall:
 
 ```sh
 sudo rm -f /usr/local/bin/vamposer
 hash -r
+```
+
+Manual uninstall on Windows (PowerShell):
+
+```powershell
+$InstallDir = Join-Path $env:LOCALAPPDATA 'Programs\Vamposer'
+$UserPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+[Environment]::SetEnvironmentVariable('Path', (($UserPath -split ';' | Where-Object { $_ -and $_ -ne $InstallDir }) -join ';'), 'User')
+Remove-Item -Recurse -Force $InstallDir
 ```
 
 Initialize a new project config:
