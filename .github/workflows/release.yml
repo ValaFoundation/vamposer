@@ -395,11 +395,31 @@ jobs:
       - name: Persist meson.build version to default branch
         run: |
           TAG_VERSION="${GITHUB_REF_NAME#v}"
+          export TAG_VERSION
 
           git fetch origin "${DEFAULT_BRANCH}" --depth=1
           git checkout "${DEFAULT_BRANCH}"
 
-          perl -0777 -i -pe "s/project\('([^']+)', 'vala', 'c', version: '[^']+'\)/project('\\1', 'vala', 'c', version: '${TAG_VERSION}')/" meson.build
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          import re
+
+          path = Path('meson.build')
+          text = path.read_text()
+          tag_version = os.environ['TAG_VERSION']
+          updated, count = re.subn(
+              r"^(project\([^\n]*?version:\s*')[^']+('.*\))$",
+              lambda match: f"{match.group(1)}{tag_version}{match.group(2)}",
+              text,
+              flags=re.M,
+          )
+
+          if count != 1:
+              raise SystemExit(f'Expected exactly one project() version update, got {count}')
+
+          path.write_text(updated)
+          PY
 
           if git diff --quiet -- meson.build; then
             echo "No version commit needed on ${DEFAULT_BRANCH}"
