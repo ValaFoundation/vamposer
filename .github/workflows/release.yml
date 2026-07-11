@@ -333,7 +333,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           CURRENT_TAG="${GITHUB_REF_NAME}"
-          PREVIOUS_TAG="$(git tag --sort=-creatordate | grep -v "^${CURRENT_TAG}$" | head -n 1 || true)"
+          PREVIOUS_TAG="$(git tag --sort=-version:refname | awk -v current_tag="${CURRENT_TAG}" '
+            found { print; exit }
+            $0 == current_tag { found = 1 }
+          ' || true)"
           if [ -n "${PREVIOUS_TAG}" ]; then
             RELEASE_RANGE="${PREVIOUS_TAG}..${CURRENT_TAG}"
           else
