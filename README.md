@@ -21,7 +21,7 @@ Dependency manager for Vala projects inspired by Composer/Go modules and integra
 
 
 
-## What it does
+## ✨ What it does
 
 `vamposer install` currently performs:
 
@@ -36,9 +36,9 @@ Dependency manager for Vala projects inspired by Composer/Go modules and integra
 	- `subprojects/vamposer.build`
 	- `subprojects/vamposer/meson.build`
 
-## Run
+## 🚀 Run
 
-### Linux
+### 🐧 Linux
 
 Manual install (curl + chmod):
 
@@ -71,7 +71,7 @@ sudo rm -f /usr/local/bin/vamposer
 hash -r
 ```
 
-### Windows
+### 🪟 Windows
 
 Manual install (PowerShell):
 
@@ -118,7 +118,7 @@ $UserPath = [Environment]::GetEnvironmentVariable('Path', 'User')
 Remove-Item -Recurse -Force $InstallDir
 ```
 
-### CLI usage
+### 💻 CLI usage
 
 Initialize a new project config:
 
@@ -178,7 +178,7 @@ Custom config path:
 vamposer install path/to/vamposer.json
 ```
 
-## Release artifacts
+## 📦 Release artifacts
 
 Tag-based release workflow (`v*`) publishes:
 
@@ -194,7 +194,7 @@ Tag-based release workflow (`v*`) publishes:
 
 Current official release artifacts target `x86_64` only. Support for additional architectures will be considered once there is a concrete user need or issue requesting it.
 
-## Config format
+## ⚙️ Config format
 
 `vamposer.json` example:
 
@@ -215,7 +215,7 @@ Current official release artifacts target `x86_64` only. Support for additional 
 }
 ```
 
-### Notes
+### 📝 Notes
 
 - `dependencies` key is repository ID/path, value is tag/branch/revision.
 - Short form without protocol is preferred (`github.com/org/repo`) and is resolved as `https://<id>.git`.
@@ -224,7 +224,7 @@ Current official release artifacts target `x86_64` only. Support for additional 
 - Supported forms include `gitlab.com/group/project`, `https://gitlab.com/group/project`, `ssh://git@gitlab.com/group/project`, and `git@gitlab.com:group/project`.
 - `system_dependencies` with `"*"` checks only package presence.
 
-## Meson integration
+## 🧩 Meson integration
 
 Generated `vamposer/meson.build` (project root) defines `vamposer_deps`:
 
@@ -260,7 +260,7 @@ Backward-compatible option (also generated):
 subdir('subprojects/vamposer')
 ```
 
-## Build
+## 🛠️ Build
 
 Build dependencies:
 
@@ -275,12 +275,12 @@ meson compile -C builddir
 
 or
 
-```sh
+```bash
 make build
 ```
 
 
-## Test
+## ✅ Test
 
 Test dependencies:
 
@@ -293,10 +293,10 @@ meson test -C builddir --verbose
 
 or
 
-```sh
+```bash
 make tests
 ```
 
-## License
+## 📄 License
 
 Apache-2.0 (see `LICENSE` and `NOTICE`).
