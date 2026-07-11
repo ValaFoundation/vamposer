@@ -270,7 +270,7 @@ Build dependencies:
 
 Install dependencies (examples):
 
-Ubuntu/Debian:
+### Ubuntu/Debian:
 
 ```bash
 sudo apt-get update
@@ -285,7 +285,7 @@ sudo apt-get install -y \
 	libjson-glib-dev
 ```
 
-Fedora:
+### Fedora:
 
 ```bash
 sudo dnf install -y \
@@ -299,7 +299,7 @@ sudo dnf install -y \
 	json-glib-devel
 ```
 
-Arch Linux:
+### Arch Linux:
 
 ```bash
 sudo pacman -S --needed \
@@ -313,15 +313,18 @@ sudo pacman -S --needed \
 	json-glib
 ```
 
+
+### Building
+
 ```bash
-meson setup builddir
-meson compile -C builddir
+make build
 ```
 
 or
 
 ```bash
-make build
+meson setup builddir
+meson compile -C builddir
 ```
 
 
