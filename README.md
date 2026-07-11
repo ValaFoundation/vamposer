@@ -19,6 +19,8 @@ Dependency manager for Vala projects inspired by Composer/Go modules and integra
 
 ## Run
 
+### Linux
+
 Manual install (curl + chmod):
 
 ```sh
@@ -31,7 +33,28 @@ chmod +x vamposer-linux
 sudo install -m 0755 vamposer-linux /usr/local/bin/vamposer
 ```
 
-Manual install on Windows (PowerShell):
+Verify installation:
+
+```sh
+vamposer --help
+```
+
+Self-upgrade the installed binary:
+
+```sh
+sudo vamposer self-upgrade
+```
+
+Manual uninstall:
+
+```sh
+sudo rm -f /usr/local/bin/vamposer
+hash -r
+```
+
+### Windows
+
+Manual install (PowerShell):
 
 ```powershell
 $InstallDir = Join-Path $env:LOCALAPPDATA 'Programs\Vamposer'
@@ -55,35 +78,16 @@ if (($UserPath -split ';') -notcontains $InstallDir) {
 }
 ```
 
-Verify installation:
-
-```sh
-vamposer --help
-```
-
-Verify installation on Windows (new terminal):
+Verify installation (new terminal):
 
 ```powershell
 vamposer --help
 ```
 
-Self-upgrade the installed binary:
-
-```sh
-sudo vamposer self-upgrade
-```
-
-Self-upgrade on Windows:
+Self-upgrade:
 
 ```powershell
 vamposer self-upgrade
-```
-
-Manual uninstall:
-
-```sh
-sudo rm -f /usr/local/bin/vamposer
-hash -r
 ```
 
 Manual uninstall on Windows (PowerShell):
@@ -94,6 +98,8 @@ $UserPath = [Environment]::GetEnvironmentVariable('Path', 'User')
 [Environment]::SetEnvironmentVariable('Path', (($UserPath -split ';' | Where-Object { $_ -and $_ -ne $InstallDir }) -join ';'), 'User')
 Remove-Item -Recurse -Force $InstallDir
 ```
+
+### CLI usage
 
 Initialize a new project config:
 
