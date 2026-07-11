@@ -361,7 +361,7 @@ jobs:
           } > RELEASE_NOTES.md
 
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           body_path: RELEASE_NOTES.md
           files: |
@@ -375,7 +375,6 @@ jobs:
             artifacts/release-arch/vamposer-*-arch-x86_64.tar.gz
             artifacts/release-arch/src/vamposer
             artifacts/release-flatpak/vamposer-*-flatpak-x86_64.flatpak
-            artifacts/release-flatpak/packaging/flatpak/io.github.valafoundation.vamposer.yml
 
   persist-version:
     name: Persist meson.build version

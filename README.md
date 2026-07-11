@@ -100,7 +100,7 @@ Tag-based release workflow (`v*`) publishes:
 - Ubuntu bundle (`vamposer-<tag>-ubuntu-x86_64.tar.gz`) + raw CLI binary
 - Fedora bundle (`vamposer-<tag>-fedora-x86_64.tar.gz`) + raw CLI binary
 - Arch bundle (`vamposer-<tag>-arch-x86_64.tar.gz`) + raw CLI binary
-- Flatpak bundle (`vamposer-<tag>-flatpak-x86_64.flatpak`) + generated manifest
+- Flatpak bundle (`vamposer-<tag>-flatpak-x86_64.flatpak`)
 
 ## Config format
 
