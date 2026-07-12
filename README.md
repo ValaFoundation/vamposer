@@ -27,6 +27,9 @@ Dependency manager for Vala projects inspired by Composer/Go modules and integra
 
 - loading `vamposer.json`
 - checking `system_dependencies` via `pkg-config --exists`
+- attempting best-effort installation of missing `system_dependencies` via detected system package manager
+	- includes distro package-name mapping for common pkg-config names (e.g. `gtk4`, `libadwaita-1`, `gee-0.8`)
+	- unresolved system deps are reported as warning and install continues with VCS dependencies
 - resolving Git-like dependency IDs to repository URLs
 - cloning dependencies into `subprojects/<project-name>`
 - generating Meson helper files:

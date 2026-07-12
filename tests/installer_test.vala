@@ -7,7 +7,7 @@ namespace AppTests {
         construct {
             add_test ("init_creates_config_and_subprojects_gitignore", test_init_creates_config_and_subprojects_gitignore);
             add_test ("install_generates_vamposer_build_without_git", test_install_generates_build_file);
-            add_test ("install_fails_on_missing_system_dependency", test_install_fails_on_missing_system_dep);
+            add_test ("install_continues_on_missing_system_dependency", test_install_continues_on_missing_system_dep);
             add_test ("require_adds_dependency_to_config", test_require_adds_dependency_to_config);
             add_test ("remove_deletes_dependency_from_config", test_remove_deletes_dependency_from_config);
             add_test ("self_upgrade_fails_for_unknown_executable", test_self_upgrade_fails_for_unknown_executable);
@@ -112,7 +112,7 @@ namespace AppTests {
             }
         }
 
-        public void test_install_fails_on_missing_system_dep () {
+        public void test_install_continues_on_missing_system_dep () {
             var old_cwd = Environment.get_current_dir ();
             string project_dir;
             try {
@@ -140,19 +140,18 @@ namespace AppTests {
                                         assert_not_reached ();
                                 }
 
-                bool failed = false;
                 try {
                     Installer.logs_enabled = false;
                     var installer = new Installer ();
                     installer.install (config_path);
                 } catch (Error e) {
-                    failed = true;
-                    assert (e.message.contains ("this-package-does-not-exist-xyz"));
+                    assert_not_reached ();
                 } finally {
                     Installer.logs_enabled = true;
                 }
 
-                assert (failed);
+                var generated_path = Path.build_filename (project_dir, "subprojects", "vamposer.build");
+                assert (FileUtils.test (generated_path, FileTest.EXISTS));
             } finally {
                 Environment.set_current_dir (old_cwd);
             }

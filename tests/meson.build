@@ -4,6 +4,7 @@ test_sources = files(
   'config_test.vala',
   'resolver_test.vala',
   'installer_test.vala',
+  'system_dependency_installer_test.vala',
 )
 
 vala_testcases_dep = dependency('vala_testcases', fallback: ['vala_testcases', 'vala_testcases_dep'])

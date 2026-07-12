@@ -1,8 +1,11 @@
+subdir('package_managers')
+
 vamposer_core_sources = files(
   'config.vala',
   'dependency_resolver.vala',
   'installer.vala',
-)
+  'system_dependency_installer.vala',
+) + package_manager_sources
 
 vamposer_deps = [
   dependency('glib-2.0'),

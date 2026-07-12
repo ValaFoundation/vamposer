@@ -254,6 +254,7 @@ namespace Vamposer {
 
             log ("[Vamposer] Checking system dependencies\n");
             var missing = new ArrayList<string> ();
+            var missing_dependencies = new HashMap<string, string> ();
 
             foreach (var entry in system_dependencies.entries) {
                 var pkg_name = entry.key;
@@ -261,6 +262,21 @@ namespace Vamposer {
                 var query = build_pkg_config_query (pkg_name, version_constraint);
                 if (!check_pkg_config_exists (query)) {
                     missing.add (query);
+                    missing_dependencies.set (pkg_name, version_constraint);
+                }
+            }
+
+            if (missing.size > 0) {
+                var system_dependency_installer = new SystemDependencyInstaller ();
+                system_dependency_installer.logs_enabled = logs_enabled;
+                system_dependency_installer.install_missing (missing_dependencies);
+
+                missing.clear ();
+                foreach (var entry in system_dependencies.entries) {
+                    var query = build_pkg_config_query (entry.key, entry.value.strip ());
+                    if (!check_pkg_config_exists (query)) {
+                        missing.add (query);
+                    }
                 }
             }
 
@@ -273,9 +289,11 @@ namespace Vamposer {
                     joined_builder.append (item);
                 }
 
-                throw new IOError.FAILED (
-                    "Missing required system dependencies:\n%s\nInstall the corresponding -dev/-devel packages for your distribution.".printf (joined_builder.str)
+                log (
+                    "[Vamposer] Warning: unresolved system dependencies remain:\n%s\n[Vamposer] Continuing dependency download and file generation anyway.\n",
+                    joined_builder.str
                 );
+                return;
             }
 
             log ("[Vamposer] System dependencies are satisfied\n");
