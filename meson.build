@@ -1,4 +1,4 @@
-project('vamposer', 'vala', 'c', version: '0.4.3', meson_version: '>=1.1.0')
+project('vamposer', 'vala', 'c', version: '0.4.4', meson_version: '>=1.1.0')
 
 subdir('src')
 
