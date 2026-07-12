@@ -22,7 +22,7 @@ jobs:
       - name: Cache APT archives
         uses: actions/cache@v6
         with:
-          path: ~/.cache/apt/archives
+          path: ~/.cache/apt/archives/*.deb
           key: ${{ runner.os }}-release-ubuntu-apt-${{ hashFiles('.github/workflows/release.yml') }}
           restore-keys: |
             ${{ runner.os }}-release-ubuntu-apt-
@@ -46,6 +46,7 @@ jobs:
             libglib2.0-dev \
             libgee-0.8-dev \
             libjson-glib-dev
+          sudo chown -R "$USER":"$USER" "$HOME/.cache/apt/archives"
 
       - name: Configure, build, and test
         run: |
@@ -342,7 +343,7 @@ jobs:
       - name: Cache APT archives
         uses: actions/cache@v6
         with:
-          path: ~/.cache/apt/archives
+          path: ~/.cache/apt/archives/*.deb
           key: ${{ runner.os }}-release-flatpak-apt-${{ hashFiles('.github/workflows/release.yml') }}
           restore-keys: |
             ${{ runner.os }}-release-flatpak-apt-
@@ -358,6 +359,7 @@ jobs:
           mkdir -p "$HOME/.cache/apt/archives/partial"
           sudo apt-get update
           sudo apt-get install -y -o Dir::Cache::archives="$HOME/.cache/apt/archives" flatpak flatpak-builder
+          sudo chown -R "$USER":"$USER" "$HOME/.cache/apt/archives"
           sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
           sudo flatpak install -y flathub org.gnome.Platform//47 org.gnome.Sdk//47
 

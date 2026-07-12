@@ -21,7 +21,7 @@ jobs:
       - name: Cache APT archives
         uses: actions/cache@v6
         with:
-          path: ~/.cache/apt/archives
+          path: ~/.cache/apt/archives/*.deb
           key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/ci.yml') }}
           restore-keys: |
             ${{ runner.os }}-apt-
@@ -38,6 +38,7 @@ jobs:
             libglib2.0-dev \
             libgee-0.8-dev \
             libjson-glib-dev
+          sudo chown -R "$USER":"$USER" "$HOME/.cache/apt/archives"
 
       - name: Configure project
         run: meson setup builddir
