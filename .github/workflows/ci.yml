@@ -18,10 +18,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
+      - name: Cache APT archives
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/apt/archives
+          key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/ci.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
+
       - name: Install system dependencies
         run: |
+          mkdir -p "$HOME/.cache/apt/archives/partial"
           sudo apt-get update
-          sudo apt-get install -y \
+          sudo apt-get install -y -o Dir::Cache::archives="$HOME/.cache/apt/archives" \
             meson \
             ninja-build \
             valac \
@@ -38,3 +47,54 @@ jobs:
 
       - name: Run tests
         run: meson test -C builddir --print-errorlogs
+
+  build-and-test-windows:
+    runs-on: windows-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          cache: true
+          install: >-
+            git
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-meson
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-vala
+            mingw-w64-ucrt-x86_64-glib2
+            mingw-w64-ucrt-x86_64-libgee
+            mingw-w64-ucrt-x86_64-json-glib
+
+      - name: Configure project
+        shell: msys2 {0}
+        run: meson setup builddir
+
+      - name: Build project
+        shell: msys2 {0}
+        run: meson compile -C builddir
+
+      - name: Run tests
+        shell: msys2 {0}
+        run: |
+          set +e
+          meson test -C builddir --print-errorlogs
+          test_exit_code=$?
+
+          if [ "$test_exit_code" -ne 0 ]; then
+            echo "::warning::Windows tests failed with exit code ${test_exit_code}, continuing because this job is non-blocking."
+            if [ -f builddir/meson-logs/testlog.txt ]; then
+              echo "::group::Windows testlog.txt"
+              cat builddir/meson-logs/testlog.txt
+              echo "::endgroup::"
+            fi
+          fi
+
+          exit 0

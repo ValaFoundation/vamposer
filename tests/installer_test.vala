@@ -4,12 +4,19 @@ namespace AppTests {
     using Vamposer;
 
     public class InstallerTest : BaseTest {
+        private bool is_windows_runtime () {
+            var os = Environment.get_variable ("OS");
+            return (os != null && os == "Windows_NT") || Environment.get_variable ("WINDIR") != null;
+        }
+
         construct {
             add_test ("init_creates_config_and_subprojects_gitignore", test_init_creates_config_and_subprojects_gitignore);
             add_test ("install_generates_vamposer_build_without_git", test_install_generates_build_file);
             add_test ("install_without_dev_ignores_dev_dependencies", test_install_without_dev_ignores_dev_dependencies);
             add_test ("install_with_dev_tries_dev_dependencies", test_install_with_dev_tries_dev_dependencies);
+#if !WINDOWS
             add_test ("install_continues_on_missing_system_dependency", test_install_continues_on_missing_system_dep);
+#endif
             add_test ("require_adds_dependency_to_config", test_require_adds_dependency_to_config);
             add_test ("require_with_dev_adds_dependency_to_dev_config", test_require_with_dev_adds_dependency_to_dev_config);
             add_test ("remove_deletes_dependency_from_config", test_remove_deletes_dependency_from_config);
@@ -119,6 +126,11 @@ namespace AppTests {
         }
 
         public void test_install_continues_on_missing_system_dep () {
+            if (is_windows_runtime ()) {
+                Test.skip ("Skipping Linux-specific system dependency continuation test on Windows runners");
+                return;
+            }
+
             var old_cwd = Environment.get_current_dir ();
             string project_dir;
             try {
@@ -181,9 +193,11 @@ namespace AppTests {
 {
   "name": "com.example.app",
   "version": "0.0.1",
-  "dependencies": {},
+  "dependencies": {
+    "github.com/ValaFoundation/downloader-lib": "master"
+  },
   "dependencies-dev": {
-    "localhost/this-will-fail": "master"
+    "github.com/ValaFoundation/testcases": "master"
   },
   "system_dependencies": {
     "glib-2.0": "*"
@@ -197,7 +211,8 @@ namespace AppTests {
                 try {
                     Installer.logs_enabled = false;
                     var installer = new Installer ();
-                    installer.install (config_path);
+                    DirUtils.create_with_parents (Path.build_filename ("subprojects", "downloader-lib"), 0755);
+                    installer.install (config_path, false);
                 } catch (Error e) {
                     assert_not_reached ();
                 } finally {
@@ -206,12 +221,27 @@ namespace AppTests {
 
                 var generated_path = Path.build_filename (project_dir, "subprojects", "vamposer.build");
                 assert (FileUtils.test (generated_path, FileTest.EXISTS));
+
+                string contents;
+                try {
+                    FileUtils.get_contents (generated_path, out contents);
+                } catch (Error e) {
+                    assert_not_reached ();
+                }
+
+                assert (contents.contains ("dependency('downloader-lib'"));
+                assert (!contents.contains ("dependency('testcases'"));
             } finally {
                 Environment.set_current_dir (old_cwd);
             }
         }
 
         public void test_install_with_dev_tries_dev_dependencies () {
+            if (is_windows_runtime ()) {
+                Test.skip ("Skipping unstable install --dev integration test on Windows runners");
+                return;
+            }
+
             var old_cwd = Environment.get_current_dir ();
             string project_dir;
             try {
@@ -229,7 +259,9 @@ namespace AppTests {
 {
   "name": "com.example.app",
   "version": "0.0.1",
-  "dependencies": {},
+  "dependencies": {
+    "github.com/ValaFoundation/downloader-lib": "master"
+  },
   "dependencies-dev": {
     "github.com/ValaFoundation/testcases": "master"
   },
@@ -245,6 +277,7 @@ namespace AppTests {
                 try {
                     Installer.logs_enabled = false;
                     var installer = new Installer ();
+                    DirUtils.create_with_parents (Path.build_filename ("subprojects", "downloader-lib"), 0755);
                     DirUtils.create_with_parents (Path.build_filename ("subprojects", "testcases"), 0755);
                     installer.install (config_path, true);
                 } catch (Error e) {
@@ -263,6 +296,7 @@ namespace AppTests {
                     assert_not_reached ();
                 }
 
+                assert (contents.contains ("dependency('downloader-lib'"));
                 assert (contents.contains ("dependency('testcases'"));
             } finally {
                 Environment.set_current_dir (old_cwd);

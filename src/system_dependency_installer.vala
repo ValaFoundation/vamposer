@@ -116,7 +116,7 @@ namespace Vamposer {
         }
 
         private SystemPackageManager? get_manager_by_id (string id) {
-            foreach (var manager in build_supported_managers ()) {
+            foreach (var manager in build_supported_managers (true)) {
                 if (manager.id == id) {
                     return manager;
                 }
@@ -125,8 +125,26 @@ namespace Vamposer {
             return null;
         }
 
-        private ArrayList<SystemPackageManager> build_supported_managers () {
+        private ArrayList<SystemPackageManager> build_supported_managers (bool include_cross_platform = false) {
             var managers = new ArrayList<SystemPackageManager> ();
+
+            // Used by autodetection: include only managers that make sense on the current OS.
+            // Used by explicit ID lookup/tests: include all managers for deterministic behavior.
+            if (!include_cross_platform) {
+#if WINDOWS
+                managers.add (new WindowsPackageManager ());
+#else
+                managers.add (new AptPackageManager ());
+                managers.add (new DnfPackageManager ());
+                managers.add (new YumPackageManager ());
+                managers.add (new PacmanPackageManager ());
+                managers.add (new ZypperPackageManager ());
+                managers.add (new ApkPackageManager ());
+                managers.add (new FlatpakPackageManager ());
+#endif
+                return managers;
+            }
+
             managers.add (new AptPackageManager ());
             managers.add (new DnfPackageManager ());
             managers.add (new YumPackageManager ());

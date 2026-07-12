@@ -2,6 +2,14 @@ namespace Vamposer.PackageManagers {
     public class WindowsPackageManager : BaseSystemPackageManager {
         public override string id { get { return "winget"; } }
 
+        public override bool is_supported_on_current_platform () {
+#if WINDOWS
+            return true;
+#else
+            return false;
+#endif
+        }
+
         protected override string[] base_install_args () {
             return new string[] {
                 "winget",

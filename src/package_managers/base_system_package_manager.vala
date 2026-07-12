@@ -4,6 +4,14 @@ namespace Vamposer.PackageManagers {
     public abstract class BaseSystemPackageManager : Object, SystemPackageManager {
         public abstract string id { get; }
 
+    public virtual bool is_supported_on_current_platform () {
+#if WINDOWS
+        return false;
+#else
+        return true;
+#endif
+    }
+
         protected abstract string[] base_install_args ();
 
         public virtual bool is_available () {
