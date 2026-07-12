@@ -35,6 +35,7 @@ namespace Vamposer.InstallerOperations {
 #else
                 installer.command_runner.run (new string[] {"sudo", "install", "-m", "0755", downloaded_path, target_path}, "install upgraded Vamposer binary via sudo");
                 installer.log ("[Vamposer] Upgraded executable: %s\n", target_path);
+                refresh_completion_after_upgrade (installer);
 #endif
             } finally {
                 if (cleanup_temp_dir) {
@@ -44,6 +45,34 @@ namespace Vamposer.InstallerOperations {
                         installer.log ("[Vamposer] Cleanup warning: %s\n", e.message);
                     }
                 }
+            }
+        }
+
+        private void refresh_completion_after_upgrade (Installer installer) {
+            try {
+                var completion_result = CompletionInstaller.install_for_current_user (true);
+                switch (completion_result) {
+                case CompletionInstallResult.INSTALLED:
+                    installer.log ("[Vamposer] Shell completion refreshed for current user\n");
+                    break;
+                case CompletionInstallResult.ALREADY_INSTALLED:
+                    installer.log ("[Vamposer] Shell completion already up to date\n");
+                    break;
+                case CompletionInstallResult.SKIPPED_UNSUPPORTED_PLATFORM:
+                    installer.log ("[Vamposer] Completion refresh skipped on this platform\n");
+                    break;
+                case CompletionInstallResult.SKIPPED_UNSUPPORTED_SHELL:
+                    installer.log ("[Vamposer] Completion refresh skipped: unsupported shell\n");
+                    break;
+                case CompletionInstallResult.SKIPPED_DISABLED:
+                    installer.log ("[Vamposer] Completion refresh skipped: disabled by environment\n");
+                    break;
+                default:
+                    installer.log ("[Vamposer] Completion refresh skipped: unknown result\n");
+                    break;
+                }
+            } catch (Error e) {
+                installer.log ("[Vamposer] Completion refresh warning: %s\n", e.message);
             }
         }
     }

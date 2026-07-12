@@ -165,6 +165,8 @@ Install shell completion for current user:
 vamposer completion install
 ```
 
+Running `vamposer completion install` again also refreshes (updates) existing completion scripts.
+
 On Linux, Vamposer also performs a best-effort completion auto-install on first run for bash/zsh.
 Disable this behavior with `VAMPOSER_NO_AUTO_COMPLETION=1`.
 
@@ -186,6 +188,8 @@ Upgrade the installed binary:
 ```bash
 sudo vamposer self-upgrade
 ```
+
+On Linux, self-upgrade also performs a best-effort refresh of shell completion for the current user.
 
 Disable colors if needed:
 

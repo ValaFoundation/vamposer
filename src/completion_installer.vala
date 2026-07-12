@@ -180,20 +180,30 @@ _vamposer_completions() {
     local commands="help init install version self-upgrade require remove update completion"
 
     if [[ $cword -eq 1 ]]; then
-        COMPREPLY=( $(compgen -W "$commands" -- "$cur") )
+        COMPREPLY=( $(compgen -W "$commands --help -h" -- "$cur") )
         return
     fi
 
     local cmd="${words[1]}"
     case "$cmd" in
+        --help|-h)
+            COMPREPLY=()
+            ;;
         install|require|remove|update)
-            COMPREPLY=( $(compgen -W "--dev --help" -- "$cur") )
+            COMPREPLY=( $(compgen -W "--dev --help -h" -- "$cur") )
             ;;
         completion)
-            COMPREPLY=( $(compgen -W "install --help" -- "$cur") )
+            if [[ $cword -eq 2 ]]; then
+                COMPREPLY=( $(compgen -W "install --help -h" -- "$cur") )
+            else
+                COMPREPLY=( $(compgen -W "--help -h" -- "$cur") )
+            fi
             ;;
-        init|version|self-upgrade|help)
-            COMPREPLY=( $(compgen -W "--help" -- "$cur") )
+        init|version|help)
+            COMPREPLY=( $(compgen -W "--help -h" -- "$cur") )
+            ;;
+        self-upgrade)
+            COMPREPLY=()
             ;;
     esac
 }
@@ -207,6 +217,7 @@ complete -F _vamposer_completions vamposer
 
 _vamposer() {
   local -a commands
+    local -a global_opts
   commands=(
     'help:show help'
     'init:initialize config'
@@ -218,21 +229,29 @@ _vamposer() {
     'update:update dependencies'
     'completion:manage shell completion'
   )
+    global_opts=(
+        '--help:show help'
+        '-h:show help'
+    )
 
   if (( CURRENT == 2 )); then
     _describe 'command' commands
+        _describe 'option' global_opts
     return
   fi
 
   case ${words[2]} in
     install|require|remove|update)
-      _arguments '--dev[include development dependencies]' '--help[show help]'
+            _arguments '--dev[include development dependencies]' '--help[show help]' '-h[show help]'
       ;;
     completion)
-      _arguments 'install[install completion for current user]' '--help[show help]'
+            _arguments '1:action:(install)' '--help[show help]' '-h[show help]'
       ;;
-    init|version|self-upgrade|help)
-      _arguments '--help[show help]'
+        init|version|help)
+            _arguments '--help[show help]' '-h[show help]'
+            ;;
+        self-upgrade)
+            _arguments '*:path:_files'
       ;;
     *)
       ;;

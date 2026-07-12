@@ -18,10 +18,10 @@ namespace Vamposer.Commands {
                 var result = CompletionInstaller.install_for_current_user (true);
                 switch (result) {
                 case CompletionInstallResult.INSTALLED:
-                    ConsoleStyle.print_success ("Shell completion installed for current user. Restart shell or source your rc file.");
+                    ConsoleStyle.print_success ("Shell completion installed or updated for current user. Restart shell or source your rc file.");
                     return 0;
                 case CompletionInstallResult.ALREADY_INSTALLED:
-                    ConsoleStyle.print_info ("Shell completion is already installed for current user.");
+                    ConsoleStyle.print_info ("Shell completion is already installed and up to date for current user.");
                     return 0;
                 case CompletionInstallResult.SKIPPED_UNSUPPORTED_PLATFORM:
                     ConsoleStyle.print_error ("Completion auto-install is currently supported on Linux only");
