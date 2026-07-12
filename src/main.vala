@@ -10,6 +10,7 @@ namespace Vamposer {
         stdout.printf ("  vamposer init [path/to/vamposer.json]\n");
         stdout.printf ("  vamposer install [--dev] [path/to/vamposer.json]\n");
         stdout.printf ("  vamposer version\n");
+        stdout.printf ("  vamposer completion [install]\n");
         stdout.printf ("  vamposer self-upgrade\n");
         stdout.printf ("  vamposer require [--dev] <dependency> [revision] [path/to/vamposer.json]\n");
         stdout.printf ("  vamposer remove [--dev] <dependency> [path/to/vamposer.json]\n");
@@ -19,6 +20,7 @@ namespace Vamposer {
     public int main (string[] args) {
         var help_command = new HelpCommand ();
         var commands = new HashMap<string, CliCommand> ();
+        commands.set ("completion", new CompletionCommand ());
         commands.set ("init", new InitCommand ());
         commands.set ("install", new InstallCommand ());
         commands.set ("version", new VersionCommand ());
@@ -36,11 +38,14 @@ namespace Vamposer {
             return help_command.execute (args, print_usage);
         }
 
+        CompletionInstaller.auto_install_if_needed ();
+
         if (commands.has_key (command_name)) {
             return commands.get (command_name).execute (args, print_usage);
         }
 
-        stderr.printf ("[Vamposer] Unknown command: %s\n\n", args[1]);
+        ConsoleStyle.print_error ("Unknown command: %s".printf (args[1]));
+        stderr.printf ("\n");
         help_command.execute (args, print_usage);
         return 1;
     }

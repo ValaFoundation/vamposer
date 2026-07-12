@@ -20,7 +20,8 @@ namespace Vamposer.Commands {
                     }
 
                     if (arg.has_prefix ("-")) {
-                        stderr.printf ("[Vamposer] Error: Unknown update option: %s\n\n", arg);
+                        ConsoleStyle.print_error ("Unknown update option: %s".printf (arg));
+                        stderr.printf ("\n");
                         print_usage ();
                         return 1;
                     }
@@ -29,7 +30,8 @@ namespace Vamposer.Commands {
                 }
 
                 if (positionals.size > 2) {
-                    stderr.printf ("[Vamposer] Error: 'update' expects [dependency] [path/to/vamposer.json]\n\n");
+                    ConsoleStyle.print_error ("'update' expects [dependency] [path/to/vamposer.json]");
+                    stderr.printf ("\n");
                     print_usage ();
                     return 1;
                 }
@@ -45,7 +47,7 @@ namespace Vamposer.Commands {
                 installer.update (config_path, dependency, include_dev);
                 return 0;
             } catch (Error e) {
-                stderr.printf ("[Vamposer] Error: %s\n", e.message);
+                ConsoleStyle.print_error (e.message);
                 return 1;
             }
         }

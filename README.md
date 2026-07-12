@@ -159,10 +159,38 @@ Show installed CLI version:
 vamposer version
 ```
 
+Install shell completion for current user:
+
+```bash
+vamposer completion install
+```
+
+On Linux, Vamposer also performs a best-effort completion auto-install on first run for bash/zsh.
+Disable this behavior with `VAMPOSER_NO_AUTO_COMPLETION=1`.
+
+Enable Bash completion (without install):
+
+```bash
+source completions/vamposer.bash
+```
+
+Enable Zsh completion (without install):
+
+```bash
+fpath=("$(pwd)/completions" $fpath)
+autoload -Uz compinit && compinit
+```
+
 Upgrade the installed binary:
 
 ```bash
 sudo vamposer self-upgrade
+```
+
+Disable colors if needed:
+
+```bash
+NO_COLOR=1 vamposer install
 ```
 
 Add or update a dependency in config:

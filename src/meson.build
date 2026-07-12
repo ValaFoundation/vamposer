@@ -12,6 +12,8 @@ version_info_source = configure_file(
 
 vamposer_core_sources = files(
   'command_runner.vala',
+  'completion_installer.vala',
+  'console_style.vala',
   'config.vala',
   'dependency_resolver.vala',
   'installer.vala',
