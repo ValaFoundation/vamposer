@@ -20,6 +20,9 @@ namespace AppTests {
   "dependencies": {
     "github.com/ValaFoundation/testcases": "master"
   },
+  "dependencies-dev": {
+    "github.com/ValaFoundation/downloader-lib": "master"
+  },
   "system_dependencies": {
     "glib-2.0": "*"
   }
@@ -41,6 +44,8 @@ namespace AppTests {
             assert (config.description == "A test app");
             assert (config.dependencies.size == 1);
             assert (config.dependencies.get ("github.com/ValaFoundation/testcases") == "master");
+            assert (config.dev_dependencies.size == 1);
+            assert (config.dev_dependencies.get ("github.com/ValaFoundation/downloader-lib") == "master");
             assert (config.system_dependencies.get ("glib-2.0") == "*");
         }
 

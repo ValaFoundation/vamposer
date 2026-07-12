@@ -8,10 +8,12 @@ namespace Vamposer {
         public string? description { get; private set; }
 
         public HashMap<string, string> dependencies { get; private set; }
+        public HashMap<string, string> dev_dependencies { get; private set; }
         public HashMap<string, string> system_dependencies { get; private set; }
 
         public PackageConfig () {
             dependencies = new HashMap<string, string> ();
+            dev_dependencies = new HashMap<string, string> ();
             system_dependencies = new HashMap<string, string> ();
         }
 
@@ -46,6 +48,7 @@ namespace Vamposer {
             }
 
             config.dependencies = load_string_map (root_object, "dependencies");
+            config.dev_dependencies = load_string_map (root_object, "dependencies-dev");
             config.system_dependencies = load_string_map (root_object, "system_dependencies");
 
             return config;
@@ -69,6 +72,7 @@ namespace Vamposer {
             }
 
             add_string_map (builder, "dependencies", dependencies);
+            add_string_map (builder, "dependencies-dev", dev_dependencies);
             add_string_map (builder, "system_dependencies", system_dependencies);
 
             builder.end_object ();

@@ -46,39 +46,40 @@ namespace Vamposer {
             init_operation.execute (this, config_path);
         }
 
-        public void install (string config_path) throws Error {
-            install_operation.execute (this, config_path);
+        public void install (string config_path, bool include_dev = false) throws Error {
+            install_operation.execute (this, config_path, include_dev);
         }
 
         public void self_upgrade (string executable_name) throws Error {
             self_upgrade_operation.execute (this, executable_name);
         }
 
-        public void require_dependency (string config_path, string source_id, string revision = "*") throws Error {
-            require_operation.execute (this, config_path, source_id, revision);
+        public void require_dependency (string config_path, string source_id, string revision = "*", bool include_dev = false) throws Error {
+            require_operation.execute (this, config_path, source_id, revision, include_dev);
         }
 
-        public void remove_dependency (string config_path, string source_id) throws Error {
-            remove_operation.execute (this, config_path, source_id);
+        public void remove_dependency (string config_path, string source_id, bool remove_dev = false) throws Error {
+            remove_operation.execute (this, config_path, source_id, remove_dev);
         }
 
-        public void update (string config_path, string? source_id = null) throws Error {
-            update_operation.execute (this, config_path, source_id);
+        public void update (string config_path, string? source_id = null, bool include_dev = false) throws Error {
+            update_operation.execute (this, config_path, source_id, include_dev);
         }
 
-        internal void run_install (string config_path, string? only_source_id, bool force_reclone) throws Error {
+        internal void run_install (string config_path, string? only_source_id, bool force_reclone, bool include_dev) throws Error {
             log ("[Vamposer] Loading config %s\n", config_path);
             var config = PackageConfig.load (config_path);
+            var all_dependencies = collect_all_dependencies (config, include_dev);
 
             ensure_subprojects_directory ();
             check_system_dependencies (config.system_dependencies);
 
-            if (only_source_id != null && !config.dependencies.has_key (only_source_id)) {
+            if (only_source_id != null && !all_dependencies.has_key (only_source_id)) {
                 throw new IOError.NOT_FOUND ("Dependency not found: %s".printf (only_source_id));
             }
 
             var resolved_dependencies = new ArrayList<ResolvedDependency> ();
-            foreach (var entry in config.dependencies.entries) {
+            foreach (var entry in all_dependencies.entries) {
                 var resolved = DependencyResolver.resolve (entry.key, entry.value);
                 var should_force = force_reclone && (only_source_id == null || only_source_id == entry.key);
                 sync_dependency (resolved, should_force);
@@ -100,13 +101,32 @@ namespace Vamposer {
             return config;
         }
 
-        internal ArrayList<ResolvedDependency> build_resolved_dependencies (PackageConfig config) {
+        internal ArrayList<ResolvedDependency> build_resolved_dependencies (PackageConfig config, bool include_dev = true) {
             var resolved_dependencies = new ArrayList<ResolvedDependency> ();
-            foreach (var entry in config.dependencies.entries) {
+            var all_dependencies = collect_all_dependencies (config, include_dev);
+            foreach (var entry in all_dependencies.entries) {
                 resolved_dependencies.add (DependencyResolver.resolve (entry.key, entry.value));
             }
 
             return resolved_dependencies;
+        }
+
+        internal HashMap<string, string> collect_all_dependencies (PackageConfig config, bool include_dev) {
+            var all_dependencies = new HashMap<string, string> ();
+
+            foreach (var entry in config.dependencies.entries) {
+                all_dependencies.set (entry.key, entry.value);
+            }
+
+            if (include_dev) {
+                foreach (var entry in config.dev_dependencies.entries) {
+                    if (!all_dependencies.has_key (entry.key)) {
+                        all_dependencies.set (entry.key, entry.value);
+                    }
+                }
+            }
+
+            return all_dependencies;
         }
 
         internal string get_release_binary_name () {

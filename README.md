@@ -39,6 +39,8 @@ Dependency manager for Vala projects inspired by Composer/Go modules and integra
 	- `subprojects/vamposer.build`
 	- `subprojects/vamposer/meson.build`
 
+Default install includes only `dependencies`. Use `vamposer install --dev` to include both `dependencies` and `dependencies-dev`.
+
 ## 🚀 Run
 
 ### 🐧 Linux
@@ -139,6 +141,12 @@ vamposer init path/to/vamposer.json
 vamposer install
 ```
 
+Install including development dependencies:
+
+```bash
+vamposer install --dev
+```
+
 Show CLI help:
 
 ```bash
@@ -157,10 +165,22 @@ Add or update a dependency in config:
 vamposer require github.com/ValaFoundation/testcases master
 ```
 
+Add or update a development dependency in config:
+
+```bash
+vamposer require --dev github.com/ValaFoundation/testcases master
+```
+
 Remove a dependency from config:
 
 ```bash
 vamposer remove github.com/ValaFoundation/testcases
+```
+
+Remove a development dependency from config:
+
+```bash
+vamposer remove --dev github.com/ValaFoundation/testcases
 ```
 
 Force refresh all dependencies (re-clone):
@@ -169,16 +189,34 @@ Force refresh all dependencies (re-clone):
 vamposer update
 ```
 
+Force refresh all dependencies including development dependencies:
+
+```bash
+vamposer update --dev
+```
+
 Force refresh one dependency:
 
 ```bash
 vamposer update github.com/ValaFoundation/testcases
 ```
 
+Force refresh one development dependency:
+
+```bash
+vamposer update --dev github.com/ValaFoundation/testcases
+```
+
 Custom config path:
 
 ```bash
 vamposer install path/to/vamposer.json
+```
+
+Custom config path with development dependencies:
+
+```bash
+vamposer install --dev path/to/vamposer.json
 ```
 
 ## 📦 Release artifacts
@@ -210,6 +248,9 @@ Current official release artifacts target `x86_64` only. Support for additional 
 		"github.com/ValaFoundation/testcases": "master",
 		"github.com/ValaFoundation/downloader-lib": "master"
 	},
+	"dependencies-dev": {
+		"github.com/ValaFoundation/dev-tools": "master"
+	},
 	"system_dependencies": {
 		"gtk4": ">=4.10",
 		"libadwaita-1": ">=1.4",
@@ -221,6 +262,7 @@ Current official release artifacts target `x86_64` only. Support for additional 
 ### 📝 Notes
 
 - `dependencies` key is repository ID/path, value is tag/branch/revision.
+- `dependencies-dev` key is for development-only Git dependencies, same value format as `dependencies`.
 - Short form without protocol is preferred (`github.com/org/repo`) and is resolved as `https://<id>.git`.
 - Full URLs are also supported, e.g. `https://github.com/org/repo` or `https://github.com/org/repo.git`.
 - Works with GitHub, GitLab, Codeberg and self-hosted Git servers (domain/path format).

@@ -9,10 +9,15 @@ namespace AppTests {
             add_test ("help_command_invokes_usage", test_help_command_invokes_usage);
             add_test ("init_command_creates_custom_config", test_init_command_creates_custom_config);
             add_test ("install_command_uses_custom_config", test_install_command_uses_custom_config);
+            add_test ("install_command_accepts_dev_flag", test_install_command_accepts_dev_flag);
+            add_test ("install_command_rejects_unknown_option", test_install_command_rejects_unknown_option);
             add_test ("require_command_missing_dependency_returns_error", test_require_command_missing_dependency_returns_error);
             add_test ("require_command_writes_dependency", test_require_command_writes_dependency);
+            add_test ("require_command_dev_writes_dev_dependency", test_require_command_dev_writes_dev_dependency);
             add_test ("remove_command_missing_dependency_returns_error", test_remove_command_missing_dependency_returns_error);
+            add_test ("remove_command_dev_removes_dev_dependency", test_remove_command_dev_removes_dev_dependency);
             add_test ("update_command_missing_named_dependency_returns_error", test_update_command_missing_named_dependency_returns_error);
+            add_test ("update_command_accepts_dev_flag", test_update_command_accepts_dev_flag);
             add_test ("self_upgrade_command_unknown_executable_returns_error", test_self_upgrade_command_unknown_executable_returns_error);
         }
 
@@ -94,6 +99,59 @@ namespace AppTests {
             }
         }
 
+        public void test_install_command_accepts_dev_flag () {
+            var old_cwd = Environment.get_current_dir ();
+            string project_dir;
+            try {
+                project_dir = DirUtils.make_tmp ("vamposer-test-XXXXXX");
+            } catch (Error e) {
+                assert_not_reached ();
+            }
+
+            Environment.set_current_dir (project_dir);
+            try {
+                var config_path = Path.build_filename (project_dir, "custom-vamposer.json");
+                try {
+                    FileUtils.set_contents (config_path, """
+{
+  "name": "com.example.app",
+  "version": "0.0.1",
+  "dependencies": {},
+  "dependencies-dev": {},
+  "system_dependencies": {
+    "glib-2.0": "*"
+  }
+}
+""");
+                } catch (Error e) {
+                    assert_not_reached ();
+                }
+
+                var command = new InstallCommand ();
+                var usage_called = false;
+                var exit_code = command.execute (new string[] {"vamposer", "install", "--dev", config_path}, () => {
+                    usage_called = true;
+                });
+
+                assert (exit_code == 0);
+                assert (!usage_called);
+                assert (FileUtils.test (Path.build_filename (project_dir, "subprojects", "vamposer.build"), FileTest.EXISTS));
+            } finally {
+                Environment.set_current_dir (old_cwd);
+            }
+        }
+
+        public void test_install_command_rejects_unknown_option () {
+            var command = new InstallCommand ();
+            var usage_called = false;
+            var exit_code = command.execute (new string[] {"vamposer", "install", "--nope"}, () => {
+                usage_called = true;
+            });
+
+            assert (exit_code == 1);
+            assert (usage_called);
+        }
+
         public void test_require_command_missing_dependency_returns_error () {
             var command = new RequireCommand ();
             var usage_called = false;
@@ -138,6 +196,40 @@ namespace AppTests {
             }
         }
 
+        public void test_require_command_dev_writes_dev_dependency () {
+            var old_cwd = Environment.get_current_dir ();
+            string project_dir;
+            try {
+                project_dir = DirUtils.make_tmp ("vamposer-test-XXXXXX");
+            } catch (Error e) {
+                assert_not_reached ();
+            }
+
+            Environment.set_current_dir (project_dir);
+            try {
+                var config_path = Path.build_filename (project_dir, "custom-vamposer.json");
+                var command = new RequireCommand ();
+                var usage_called = false;
+                var exit_code = command.execute (
+                    new string[] {"vamposer", "require", "--dev", "github.com/ValaFoundation/testcases", "master", config_path},
+                    () => { usage_called = true; }
+                );
+
+                assert (exit_code == 0);
+                assert (!usage_called);
+
+                try {
+                    var config = PackageConfig.load (config_path);
+                    assert (config.dev_dependencies.get ("github.com/ValaFoundation/testcases") == "master");
+                    assert (!config.dependencies.has_key ("github.com/ValaFoundation/testcases"));
+                } catch (Error e) {
+                    assert_not_reached ();
+                }
+            } finally {
+                Environment.set_current_dir (old_cwd);
+            }
+        }
+
         public void test_remove_command_missing_dependency_returns_error () {
             var command = new RemoveCommand ();
             var usage_called = false;
@@ -147,6 +239,55 @@ namespace AppTests {
 
             assert (exit_code == 1);
             assert (usage_called);
+        }
+
+        public void test_remove_command_dev_removes_dev_dependency () {
+            var old_cwd = Environment.get_current_dir ();
+            string project_dir;
+            try {
+                project_dir = DirUtils.make_tmp ("vamposer-test-XXXXXX");
+            } catch (Error e) {
+                assert_not_reached ();
+            }
+
+            Environment.set_current_dir (project_dir);
+            try {
+                var config_path = Path.build_filename (project_dir, "custom-vamposer.json");
+                try {
+                    FileUtils.set_contents (config_path, """
+{
+  "dependencies": {},
+  "dependencies-dev": {
+    "github.com/ValaFoundation/testcases": "master"
+  },
+  "system_dependencies": {
+    "glib-2.0": "*"
+  }
+}
+""");
+                } catch (Error e) {
+                    assert_not_reached ();
+                }
+
+                var command = new RemoveCommand ();
+                var usage_called = false;
+                var exit_code = command.execute (
+                    new string[] {"vamposer", "remove", "--dev", "github.com/ValaFoundation/testcases", config_path},
+                    () => { usage_called = true; }
+                );
+
+                assert (exit_code == 0);
+                assert (!usage_called);
+
+                try {
+                    var config = PackageConfig.load (config_path);
+                    assert (!config.dev_dependencies.has_key ("github.com/ValaFoundation/testcases"));
+                } catch (Error e) {
+                    assert_not_reached ();
+                }
+            } finally {
+                Environment.set_current_dir (old_cwd);
+            }
         }
 
         public void test_update_command_missing_named_dependency_returns_error () {
@@ -178,6 +319,48 @@ namespace AppTests {
                 var usage_called = false;
                 var exit_code = command.execute (
                     new string[] {"vamposer", "update", "github.com/ValaFoundation/testcases", config_path},
+                    () => { usage_called = true; }
+                );
+
+                assert (exit_code == 1);
+                assert (!usage_called);
+            } finally {
+                Environment.set_current_dir (old_cwd);
+            }
+        }
+
+        public void test_update_command_accepts_dev_flag () {
+            var old_cwd = Environment.get_current_dir ();
+            string project_dir;
+            try {
+                project_dir = DirUtils.make_tmp ("vamposer-test-XXXXXX");
+            } catch (Error e) {
+                assert_not_reached ();
+            }
+
+            Environment.set_current_dir (project_dir);
+            try {
+                var config_path = Path.build_filename (project_dir, "custom-vamposer.json");
+                try {
+                    FileUtils.set_contents (config_path, """
+{
+    "dependencies": {},
+    "dependencies-dev": {
+        "localhost/this-will-fail": "master"
+    },
+  "system_dependencies": {
+    "glib-2.0": "*"
+  }
+}
+""");
+                } catch (Error e) {
+                    assert_not_reached ();
+                }
+
+                var command = new UpdateCommand ();
+                var usage_called = false;
+                var exit_code = command.execute (
+                    new string[] {"vamposer", "update", "--dev", "localhost/this-will-fail", config_path},
                     () => { usage_called = true; }
                 );
 

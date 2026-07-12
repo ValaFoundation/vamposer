@@ -8,11 +8,11 @@ namespace Vamposer {
         stdout.printf ("  vamposer help\n");
         stdout.printf ("  vamposer --help\n");
         stdout.printf ("  vamposer init [path/to/vamposer.json]\n");
-        stdout.printf ("  vamposer install [path/to/vamposer.json]\n");
+        stdout.printf ("  vamposer install [--dev] [path/to/vamposer.json]\n");
         stdout.printf ("  vamposer self-upgrade\n");
-        stdout.printf ("  vamposer require <dependency> [revision] [path/to/vamposer.json]\n");
-        stdout.printf ("  vamposer remove <dependency> [path/to/vamposer.json]\n");
-        stdout.printf ("  vamposer update [dependency] [path/to/vamposer.json]\n");
+        stdout.printf ("  vamposer require [--dev] <dependency> [revision] [path/to/vamposer.json]\n");
+        stdout.printf ("  vamposer remove [--dev] <dependency> [path/to/vamposer.json]\n");
+        stdout.printf ("  vamposer update [--dev] [dependency] [path/to/vamposer.json]\n");
     }
 
     public int main (string[] args) {
