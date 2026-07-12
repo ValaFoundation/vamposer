@@ -153,6 +153,12 @@ Show CLI help:
 vamposer --help
 ```
 
+Show installed CLI version:
+
+```bash
+vamposer version
+```
+
 Upgrade the installed binary:
 
 ```bash

@@ -11,6 +11,8 @@ namespace AppTests {
             add_test ("install_command_uses_custom_config", test_install_command_uses_custom_config);
             add_test ("install_command_accepts_dev_flag", test_install_command_accepts_dev_flag);
             add_test ("install_command_rejects_unknown_option", test_install_command_rejects_unknown_option);
+            add_test ("version_command_succeeds_without_arguments", test_version_command_succeeds_without_arguments);
+            add_test ("version_command_rejects_extra_arguments", test_version_command_rejects_extra_arguments);
             add_test ("require_command_missing_dependency_returns_error", test_require_command_missing_dependency_returns_error);
             add_test ("require_command_writes_dependency", test_require_command_writes_dependency);
             add_test ("require_command_dev_writes_dev_dependency", test_require_command_dev_writes_dev_dependency);
@@ -145,6 +147,28 @@ namespace AppTests {
             var command = new InstallCommand ();
             var usage_called = false;
             var exit_code = command.execute (new string[] {"vamposer", "install", "--nope"}, () => {
+                usage_called = true;
+            });
+
+            assert (exit_code == 1);
+            assert (usage_called);
+        }
+
+        public void test_version_command_succeeds_without_arguments () {
+            var command = new VersionCommand ();
+            var usage_called = false;
+            var exit_code = command.execute (new string[] {"vamposer", "version"}, () => {
+                usage_called = true;
+            });
+
+            assert (exit_code == 0);
+            assert (!usage_called);
+        }
+
+        public void test_version_command_rejects_extra_arguments () {
+            var command = new VersionCommand ();
+            var usage_called = false;
+            var exit_code = command.execute (new string[] {"vamposer", "version", "unexpected"}, () => {
                 usage_called = true;
             });
 

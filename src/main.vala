@@ -9,6 +9,7 @@ namespace Vamposer {
         stdout.printf ("  vamposer --help\n");
         stdout.printf ("  vamposer init [path/to/vamposer.json]\n");
         stdout.printf ("  vamposer install [--dev] [path/to/vamposer.json]\n");
+        stdout.printf ("  vamposer version\n");
         stdout.printf ("  vamposer self-upgrade\n");
         stdout.printf ("  vamposer require [--dev] <dependency> [revision] [path/to/vamposer.json]\n");
         stdout.printf ("  vamposer remove [--dev] <dependency> [path/to/vamposer.json]\n");
@@ -20,6 +21,7 @@ namespace Vamposer {
         var commands = new HashMap<string, CliCommand> ();
         commands.set ("init", new InitCommand ());
         commands.set ("install", new InstallCommand ());
+        commands.set ("version", new VersionCommand ());
         commands.set ("self-upgrade", new SelfUpgradeCommand ());
         commands.set ("require", new RequireCommand ());
         commands.set ("remove", new RemoveCommand ());

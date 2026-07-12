@@ -2,13 +2,21 @@ subdir('package_managers')
 subdir('commands')
 subdir('installer_operations')
 
+version_info_data = configuration_data()
+version_info_data.set('APP_VERSION', meson.project_version())
+version_info_source = configure_file(
+  input: 'version_info.vala.in',
+  output: 'version_info.vala',
+  configuration: version_info_data,
+)
+
 vamposer_core_sources = files(
   'command_runner.vala',
   'config.vala',
   'dependency_resolver.vala',
   'installer.vala',
   'system_dependency_installer.vala',
-) + package_manager_sources + installer_operation_sources + cli_command_sources
+) + package_manager_sources + installer_operation_sources + cli_command_sources + [version_info_source]
 
 vamposer_deps = [
   dependency('glib-2.0'),

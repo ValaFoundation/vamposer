@@ -33,7 +33,7 @@ namespace Vamposer.InstallerOperations {
                 cleanup_temp_dir = false;
                 installer.log ("[Vamposer] Upgrade scheduled for executable: %s\n", target_path);
 #else
-                installer.command_runner.run (new string[] {"install", "-m", "0755", downloaded_path, target_path}, "install upgraded Vamposer binary");
+                installer.command_runner.run (new string[] {"sudo", "install", "-m", "0755", downloaded_path, target_path}, "install upgraded Vamposer binary via sudo");
                 installer.log ("[Vamposer] Upgraded executable: %s\n", target_path);
 #endif
             } finally {
