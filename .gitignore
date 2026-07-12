@@ -12,6 +12,7 @@ build-native-debug
 build/
 build-appimage/
 build-tests/
+build-no-tests/
 dist/
 /tmp
 

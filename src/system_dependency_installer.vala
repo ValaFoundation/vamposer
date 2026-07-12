@@ -4,6 +4,11 @@ using Vamposer.PackageManagers;
 namespace Vamposer {
     public class SystemDependencyInstaller : Object {
         public bool logs_enabled { get; set; default = true; }
+        private CommandRunner command_runner;
+
+        public SystemDependencyInstaller () {
+            command_runner = new CommandRunner ();
+        }
 
         public void install_missing (HashMap<string, string> missing_dependencies) {
             var package_manager = detect_package_manager ();
@@ -72,52 +77,32 @@ namespace Vamposer {
         private bool install_single_system_package (SystemPackageManager package_manager, string package_name) {
             var full_command = package_manager.build_install_command (package_name);
 
-            string? std_out;
-            string? std_err;
-            int status = 0;
-            var attempted_with_sudo = false;
-
             try {
-                Process.spawn_sync (null, full_command, null, SpawnFlags.SEARCH_PATH, null, out std_out, out std_err, out status);
-            } catch (SpawnError e) {
-                log ("[Vamposer] Auto-install attempt failed to start: %s\n", e.message);
-                return false;
-            }
-
-            if (status != 0 && command_exists ("sudo")) {
-                attempted_with_sudo = true;
-                var sudo_command = new ArrayList<string> ();
-                sudo_command.add ("sudo");
-                sudo_command.add ("-n");
-                foreach (var token in full_command) {
-                    sudo_command.add (token);
-                }
-
-                try {
-                    Process.spawn_sync (null, sudo_command.to_array (), null, SpawnFlags.SEARCH_PATH, null, out std_out, out std_err, out status);
-                } catch (SpawnError e) {
-                    log ("[Vamposer] Auto-install with sudo failed to start: %s\n", e.message);
-                    return false;
-                }
-            }
-
-            if (status == 0) {
+                command_runner.run (full_command, "install system package");
                 log ("[Vamposer] Installed system package: %s\n", package_name);
                 return true;
-            }
+            } catch (Error e) {
+                if (command_runner.command_exists ("sudo")) {
+                    var sudo_command = new ArrayList<string> ();
+                    sudo_command.add ("sudo");
+                    sudo_command.add ("-n");
+                    foreach (var token in full_command) {
+                        sudo_command.add (token);
+                    }
 
-            var err = std_err != null ? std_err.strip () : "";
-            if (err == "") {
-                err = "command returned a non-zero exit code";
-            }
+                    try {
+                        command_runner.run (sudo_command.to_array (), "install system package with sudo");
+                        log ("[Vamposer] Installed system package with sudo: %s\n", package_name);
+                        return true;
+                    } catch (Error sudo_error) {
+                        log ("[Vamposer] Failed to install package '%s' (sudo): %s\n", package_name, sudo_error.message);
+                        return false;
+                    }
+                }
 
-            if (attempted_with_sudo) {
-                log ("[Vamposer] Failed to install package '%s' (sudo): %s\n", package_name, err);
-            } else {
-                log ("[Vamposer] Failed to install package '%s': %s\n", package_name, err);
+                log ("[Vamposer] Failed to install package '%s': %s\n", package_name, e.message);
+                return false;
             }
-
-            return false;
         }
 
         private SystemPackageManager? detect_package_manager () {
@@ -151,20 +136,6 @@ namespace Vamposer {
             managers.add (new FlatpakPackageManager ());
             managers.add (new WindowsPackageManager ());
             return managers;
-        }
-
-        private bool command_exists (string name) {
-            string? std_out;
-            string? std_err;
-            int status = 0;
-
-            try {
-                Process.spawn_sync (null, new string[] {"which", name}, null, SpawnFlags.SEARCH_PATH, null, out std_out, out std_err, out status);
-            } catch (SpawnError e) {
-                return false;
-            }
-
-            return status == 0;
         }
 
         private void log (string format, ...) {

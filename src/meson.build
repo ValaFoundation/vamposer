@@ -1,11 +1,14 @@
 subdir('package_managers')
+subdir('commands')
+subdir('installer_operations')
 
 vamposer_core_sources = files(
+  'command_runner.vala',
   'config.vala',
   'dependency_resolver.vala',
   'installer.vala',
   'system_dependency_installer.vala',
-) + package_manager_sources
+) + package_manager_sources + installer_operation_sources
 
 vamposer_deps = [
   dependency('glib-2.0'),
@@ -29,7 +32,7 @@ vamposer_core_dep = declare_dependency(
 
 vamposer_cli_sources = files(
   'main.vala',
-)
+) + cli_command_sources
 
 executable(
   meson.project_name(),

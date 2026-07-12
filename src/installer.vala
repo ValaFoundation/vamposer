@@ -1,4 +1,5 @@
 using Gee;
+using Vamposer.InstallerOperations;
 
 namespace Vamposer {
     public class ResolvedDependency : Object {
@@ -21,108 +22,51 @@ namespace Vamposer {
 
     public class Installer : Object {
         public static bool logs_enabled { get; set; default = true; }
-        private const string RELEASE_DOWNLOAD_BASE = "https://github.com/ValaFoundation/vamposer/releases/latest/download";
+        internal const string RELEASE_DOWNLOAD_BASE = "https://github.com/ValaFoundation/vamposer/releases/latest/download";
+        internal CommandRunner command_runner;
+
+        private InitOperation init_operation;
+        private InstallOperation install_operation;
+        private SelfUpgradeOperation self_upgrade_operation;
+        private RequireOperation require_operation;
+        private RemoveOperation remove_operation;
+        private UpdateOperation update_operation;
+
+        public Installer () {
+            command_runner = new CommandRunner ();
+            init_operation = new InitOperation ();
+            install_operation = new InstallOperation ();
+            self_upgrade_operation = new SelfUpgradeOperation ();
+            require_operation = new RequireOperation ();
+            remove_operation = new RemoveOperation ();
+            update_operation = new UpdateOperation ();
+        }
 
         public void init_config (string config_path) throws Error {
-            ensure_subprojects_directory ();
-
-            if (FileUtils.test (config_path, FileTest.EXISTS)) {
-                throw new IOError.EXISTS ("Config file already exists: %s".printf (config_path));
-            }
-
-            var config = PackageConfig.create_empty ();
-            config.save (config_path);
-            log ("[Vamposer] Initialized config: %s\n", config_path);
+            init_operation.execute (this, config_path);
         }
 
         public void install (string config_path) throws Error {
-            run_install (config_path, null, false);
+            install_operation.execute (this, config_path);
         }
 
         public void self_upgrade (string executable_name) throws Error {
-            var target_path = resolve_executable_path (executable_name);
-            var release_binary_name = get_release_binary_name ();
-            var release_checksum_name = "%s.sha256".printf (release_binary_name);
-
-            string temp_dir;
-            try {
-                temp_dir = DirUtils.make_tmp ("vamposer-upgrade-XXXXXX");
-            } catch (FileError e) {
-                throw new IOError.FAILED ("Unable to create temporary directory: %s".printf (e.message));
-            }
-
-            var cleanup_temp_dir = true;
-            try {
-                var binary_url = "%s/%s".printf (RELEASE_DOWNLOAD_BASE, release_binary_name);
-                var checksum_url = "%s/%s".printf (RELEASE_DOWNLOAD_BASE, release_checksum_name);
-                var downloaded_path = Path.build_filename (temp_dir, release_binary_name);
-                var checksum_path = Path.build_filename (temp_dir, release_checksum_name);
-
-                run_command (new string[] {"curl", "-fL", "-o", downloaded_path, binary_url}, "download latest Vamposer binary");
-                run_command (new string[] {"curl", "-fL", "-o", checksum_path, checksum_url}, "download latest Vamposer checksum");
-
-                var expected_checksum = read_checksum_value (checksum_path);
-                var actual_checksum = calculate_sha256 (downloaded_path);
-                if (expected_checksum != actual_checksum) {
-                    throw new IOError.FAILED ("Downloaded Vamposer checksum mismatch");
-                }
-
-#if WINDOWS
-                schedule_windows_replacement (downloaded_path, target_path, temp_dir);
-                cleanup_temp_dir = false;
-                log ("[Vamposer] Upgrade scheduled for executable: %s\n", target_path);
-#else
-                run_command (new string[] {"install", "-m", "0755", downloaded_path, target_path}, "install upgraded Vamposer binary");
-                log ("[Vamposer] Upgraded executable: %s\n", target_path);
-#endif
-            } finally {
-                if (cleanup_temp_dir) {
-                    try {
-                        remove_path_if_exists (temp_dir);
-                    } catch (Error e) {
-                        log ("[Vamposer] Cleanup warning: %s\n", e.message);
-                    }
-                }
-            }
+            self_upgrade_operation.execute (this, executable_name);
         }
 
         public void require_dependency (string config_path, string source_id, string revision = "*") throws Error {
-            ensure_subprojects_directory ();
-
-            var config = load_or_create_config (config_path);
-            config.dependencies.set (source_id, revision);
-            config.save (config_path);
-
-            var resolved_dependencies = build_resolved_dependencies (config);
-            write_vamposer_build (resolved_dependencies);
-            log ("[Vamposer] Added dependency: %s (%s)\n", source_id, revision);
+            require_operation.execute (this, config_path, source_id, revision);
         }
 
         public void remove_dependency (string config_path, string source_id) throws Error {
-            ensure_subprojects_directory ();
-
-            var config = PackageConfig.load (config_path);
-            if (!config.dependencies.has_key (source_id)) {
-                throw new IOError.NOT_FOUND ("Dependency not found: %s".printf (source_id));
-            }
-
-            var resolved = DependencyResolver.resolve (source_id, config.dependencies.get (source_id));
-            config.dependencies.unset (source_id);
-            config.save (config_path);
-
-            remove_path_if_exists (Path.build_filename ("subprojects", "%s.wrap".printf (resolved.project_name)));
-            remove_path_if_exists (resolved.local_directory);
-
-            var resolved_dependencies = build_resolved_dependencies (config);
-            write_vamposer_build (resolved_dependencies);
-            log ("[Vamposer] Removed dependency: %s\n", source_id);
+            remove_operation.execute (this, config_path, source_id);
         }
 
         public void update (string config_path, string? source_id = null) throws Error {
-            run_install (config_path, source_id, true);
+            update_operation.execute (this, config_path, source_id);
         }
 
-        private void run_install (string config_path, string? only_source_id, bool force_reclone) throws Error {
+        internal void run_install (string config_path, string? only_source_id, bool force_reclone) throws Error {
             log ("[Vamposer] Loading config %s\n", config_path);
             var config = PackageConfig.load (config_path);
 
@@ -146,7 +90,7 @@ namespace Vamposer {
             log ("[Vamposer] Done. Git dependencies: %u\n", resolved_dependencies.size);
         }
 
-        private PackageConfig load_or_create_config (string config_path) throws Error {
+        internal PackageConfig load_or_create_config (string config_path) throws Error {
             if (FileUtils.test (config_path, FileTest.EXISTS)) {
                 return PackageConfig.load (config_path);
             }
@@ -156,7 +100,7 @@ namespace Vamposer {
             return config;
         }
 
-        private ArrayList<ResolvedDependency> build_resolved_dependencies (PackageConfig config) {
+        internal ArrayList<ResolvedDependency> build_resolved_dependencies (PackageConfig config) {
             var resolved_dependencies = new ArrayList<ResolvedDependency> ();
             foreach (var entry in config.dependencies.entries) {
                 resolved_dependencies.add (DependencyResolver.resolve (entry.key, entry.value));
@@ -165,7 +109,7 @@ namespace Vamposer {
             return resolved_dependencies;
         }
 
-        private string get_release_binary_name () {
+        internal string get_release_binary_name () {
 #if WINDOWS
             return "vamposer.exe";
 #else
@@ -173,7 +117,7 @@ namespace Vamposer {
 #endif
         }
 
-        private string resolve_executable_path (string executable_name) throws Error {
+        internal string resolve_executable_path (string executable_name) throws Error {
             var trimmed = executable_name.strip ();
             if (trimmed == "") {
                 throw new IOError.INVALID_ARGUMENT ("Executable name must not be empty");
@@ -186,9 +130,9 @@ namespace Vamposer {
             string resolved;
             try {
 #if WINDOWS
-                resolved = run_command_stdout (new string[] {"where", trimmed}, "resolve executable path");
+                resolved = command_runner.run_stdout (new string[] {"where", trimmed}, "resolve executable path");
 #else
-                resolved = run_command_stdout (new string[] {"which", trimmed}, "resolve executable path");
+                resolved = command_runner.run_stdout (new string[] {"which", trimmed}, "resolve executable path");
 #endif
             } catch (Error e) {
                 throw new IOError.NOT_FOUND ("Unable to locate executable in PATH: %s".printf (trimmed));
@@ -202,7 +146,7 @@ namespace Vamposer {
         }
 
 #if WINDOWS
-        private void schedule_windows_replacement (string downloaded_path, string target_path, string temp_dir) throws Error {
+        internal void schedule_windows_replacement (string downloaded_path, string target_path, string temp_dir) throws Error {
             var script_path = Path.build_filename (temp_dir, "replace-vamposer.ps1");
             var quoted_downloaded = powershell_quote (downloaded_path);
             var quoted_target = powershell_quote (target_path);
@@ -213,7 +157,7 @@ namespace Vamposer {
                 + "Remove-Item -Recurse -Force '%s'\n".printf (quoted_temp_dir);
 
             FileUtils.set_contents (script_path, script_contents);
-            run_command (
+            command_runner.run (
                 new string[] {
                     "cmd",
                     "/c",
@@ -235,7 +179,7 @@ namespace Vamposer {
         }
 #endif
 
-        private void ensure_subprojects_directory () throws Error {
+        internal void ensure_subprojects_directory () throws Error {
             DirUtils.create_with_parents ("subprojects", 0755);
 
             var gitignore_path = Path.build_filename ("subprojects", ".gitignore");
@@ -346,7 +290,7 @@ namespace Vamposer {
                     dependency.local_directory,
                 };
 
-                run_command (argv, "git clone for %s".printf (dependency.source_id));
+                command_runner.run (argv, "git clone for %s".printf (dependency.source_id));
             } else {
                 var argv = new string[] {
                     "git",
@@ -357,51 +301,25 @@ namespace Vamposer {
                     dependency.local_directory,
                 };
 
-                run_command (argv, "git clone for %s".printf (dependency.source_id));
+                command_runner.run (argv, "git clone for %s".printf (dependency.source_id));
             }
 
             log ("[Vamposer] Downloaded %s -> %s\n", dependency.source_id, dependency.local_directory);
         }
 
-        private void remove_path_if_exists (string path) throws Error {
+        internal void remove_path_if_exists (string path) throws Error {
             if (!FileUtils.test (path, FileTest.EXISTS)) {
                 return;
             }
 
             if (FileUtils.test (path, FileTest.IS_DIR)) {
-                run_command (new string[] {"rm", "-rf", path}, "remove directory");
+                command_runner.run (new string[] {"rm", "-rf", path}, "remove directory");
             } else {
                 FileUtils.remove (path);
             }
         }
 
-        private void run_command (string[] argv, string label) throws Error {
-            run_command_stdout (argv, label);
-        }
-
-        private string run_command_stdout (string[] argv, string label) throws Error {
-            string? std_out;
-            string? std_err;
-            int status = 0;
-
-            try {
-                Process.spawn_sync (null, argv, null, SpawnFlags.SEARCH_PATH, null, out std_out, out std_err, out status);
-            } catch (SpawnError e) {
-                throw new IOError.FAILED ("Unable to execute command '%s': %s".printf (label, e.message));
-            }
-
-            if (status != 0) {
-                var err = std_err != null ? std_err.strip () : "";
-                if (err == "") {
-                    err = "command returned a non-zero exit code";
-                }
-                throw new IOError.FAILED ("%s failed: %s".printf (label, err));
-            }
-
-            return std_out != null ? std_out.strip () : "";
-        }
-
-        private string read_checksum_value (string checksum_path) throws Error {
+        internal string read_checksum_value (string checksum_path) throws Error {
             string contents;
             try {
                 FileUtils.get_contents (checksum_path, out contents);
@@ -426,9 +344,9 @@ namespace Vamposer {
             throw new IOError.FAILED ("Checksum file is empty or invalid");
         }
 
-        private string calculate_sha256 (string file_path) throws Error {
+        internal string calculate_sha256 (string file_path) throws Error {
 #if WINDOWS
-            var output = run_command_stdout (
+            var output = command_runner.run_stdout (
                 new string[] {
                     "powershell",
                     "-NoProfile",
@@ -439,7 +357,7 @@ namespace Vamposer {
             );
             return output.down ();
 #else
-            var output = run_command_stdout (new string[] {"sha256sum", file_path}, "calculate sha256 checksum");
+            var output = command_runner.run_stdout (new string[] {"sha256sum", file_path}, "calculate sha256 checksum");
             foreach (var field in output.split (" ")) {
                 var token = field.strip ();
                 if (token != "") {
@@ -516,7 +434,7 @@ directory = %s
             return false;
         }
 
-        private void write_vamposer_build (ArrayList<ResolvedDependency> dependencies) throws Error {
+        internal void write_vamposer_build (ArrayList<ResolvedDependency> dependencies) throws Error {
             var builder = new StringBuilder ();
             builder.append ("# THIS FILE IS AUTO-GENERATED BY VAMPOSER. DO NOT EDIT.\n");
             builder.append ("vamposer_deps = [\n");
@@ -563,7 +481,7 @@ directory = %s
             log ("[Vamposer] Generated file: %s\n", meson_path);
         }
 
-        private void log (string format, ...) {
+        internal void log (string format, ...) {
             if (!logs_enabled) {
                 return;
             }
