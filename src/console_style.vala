@@ -74,11 +74,75 @@ namespace Vamposer {
                 return colorize (styled, "31");
             }
 
-            if (message.contains ("Done.") || message.contains ("Upgraded executable") || message.contains ("Installed system package")) {
+            if (message.contains ("Done.")
+                || message.contains ("Upgraded executable")
+                || message.contains ("Upgrade scheduled")
+                || message.contains ("Installed system package")
+                || message.contains ("Added dependency")
+                || message.contains ("Removed dependency")) {
                 return colorize (styled, "32");
             }
 
+            if (message.contains ("Loading config")
+                || message.contains ("Checking system dependencies")
+                || message.contains ("Attempting to auto-install")
+                || message.contains ("Downloaded")
+                || message.contains ("Generated file")
+                || message.contains ("Generated wrap file")) {
+                return colorize (styled, "36");
+            }
+
             return styled;
+        }
+
+        public static string style_usage_title (string text) {
+            return colorize (text, "1;36");
+        }
+
+        public static string style_usage_section (string text) {
+            return colorize (text, "1;33");
+        }
+
+        public static string style_usage_entry (string text) {
+            if (!colors_enabled ()) {
+                return text;
+            }
+
+            var indent_len = 0;
+            while (indent_len < text.length && text[ indent_len ] == ' ') {
+                indent_len++;
+            }
+
+            var indent = text.substring (0, indent_len);
+            var content = text.substring (indent_len);
+            if (content.has_prefix ("vamposer")) {
+                var command = "vamposer";
+                var tail = content.substring (command.length);
+                return "%s%s%s".printf (indent, colorize (command, "1;36"), colorize (tail, "32"));
+            }
+
+            return "%s%s".printf (indent, colorize (content, "32"));
+        }
+
+        public static void print_success (string message) {
+            var line = "[Vamposer] %s".printf (message);
+            stdout.printf ("%s\n", colorize (colorize_prefix (line), "32"));
+        }
+
+        public static void print_info (string message) {
+            var line = "[Vamposer] %s".printf (message);
+            stdout.printf ("%s\n", colorize (colorize_prefix (line), "36"));
+        }
+
+        public static void print_warning (string message) {
+            var line = "[Vamposer] Warning: %s".printf (message);
+            stdout.printf ("%s\n", colorize (colorize_prefix (line), "33"));
+        }
+
+        public static void print_version (string version) {
+            var title = colorize ("Vamposer", "1;36");
+            var value = colorize (version, "1;32");
+            stdout.printf ("%s %s\n", title, value);
         }
 
         public static void print_error (string message) {

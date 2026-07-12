@@ -8,7 +8,7 @@ namespace Vamposer.Commands {
                 return 1;
             }
 
-            stdout.printf ("Vamposer %s\n", APP_VERSION);
+            ConsoleStyle.print_version (APP_VERSION);
             return 0;
         }
     }

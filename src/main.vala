@@ -3,18 +3,19 @@ using Vamposer.Commands;
 
 namespace Vamposer {
     private void print_usage () {
-        stdout.printf ("Vamposer - dependency manager for Vala/Meson\n\n");
-        stdout.printf ("Usage:\n");
-        stdout.printf ("  vamposer help\n");
-        stdout.printf ("  vamposer --help\n");
-        stdout.printf ("  vamposer init [path/to/vamposer.json]\n");
-        stdout.printf ("  vamposer install [--dev] [path/to/vamposer.json]\n");
-        stdout.printf ("  vamposer version\n");
-        stdout.printf ("  vamposer completion [install]\n");
-        stdout.printf ("  vamposer self-upgrade\n");
-        stdout.printf ("  vamposer require [--dev] <dependency> [revision] [path/to/vamposer.json]\n");
-        stdout.printf ("  vamposer remove [--dev] <dependency> [path/to/vamposer.json]\n");
-        stdout.printf ("  vamposer update [--dev] [dependency] [path/to/vamposer.json]\n");
+        stdout.printf ("%s\n\n", ConsoleStyle.style_usage_title ("Vamposer - dependency manager for Vala/Meson"));
+        stdout.printf ("%s\n\n", ConsoleStyle.style_usage_section ("Version: %s".printf (APP_VERSION)));
+        stdout.printf ("%s\n", ConsoleStyle.style_usage_section ("Usage:"));
+        stdout.printf ("%s\n", ConsoleStyle.style_usage_entry ("  vamposer help"));
+        stdout.printf ("%s\n", ConsoleStyle.style_usage_entry ("  vamposer --help"));
+        stdout.printf ("%s\n", ConsoleStyle.style_usage_entry ("  vamposer init [path/to/vamposer.json]"));
+        stdout.printf ("%s\n", ConsoleStyle.style_usage_entry ("  vamposer install [--dev] [path/to/vamposer.json]"));
+        stdout.printf ("%s\n", ConsoleStyle.style_usage_entry ("  vamposer version"));
+        stdout.printf ("%s\n", ConsoleStyle.style_usage_entry ("  vamposer completion [install]"));
+        stdout.printf ("%s\n", ConsoleStyle.style_usage_entry ("  vamposer self-upgrade"));
+        stdout.printf ("%s\n", ConsoleStyle.style_usage_entry ("  vamposer require [--dev] <dependency> [revision] [path/to/vamposer.json]"));
+        stdout.printf ("%s\n", ConsoleStyle.style_usage_entry ("  vamposer remove [--dev] <dependency> [path/to/vamposer.json]"));
+        stdout.printf ("%s\n", ConsoleStyle.style_usage_entry ("  vamposer update [--dev] [dependency] [path/to/vamposer.json]"));
     }
 
     public int main (string[] args) {
