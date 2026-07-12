@@ -242,7 +242,13 @@ _vamposer() {
 
   case ${words[2]} in
     install|require|remove|update)
-            _arguments '--dev[include development dependencies]' '--help[show help]' '-h[show help]'
+            local -a sub_opts
+            sub_opts=(--dev --help -h)
+            if [[ "${words[CURRENT]}" == -* || CURRENT -le 3 ]]; then
+                compadd -a sub_opts
+            else
+                _files
+            fi
       ;;
     completion)
             _arguments '1:action:(install)' '--help[show help]' '-h[show help]'
