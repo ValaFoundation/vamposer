@@ -345,9 +345,7 @@ namespace AppTests {
                     FileUtils.set_contents (config_path, """
 {
     "dependencies": {},
-    "dependencies-dev": {
-        "localhost/this-will-fail": "master"
-    },
+    "dependencies-dev": {},
   "system_dependencies": {
     "glib-2.0": "*"
   }
@@ -360,7 +358,7 @@ namespace AppTests {
                 var command = new UpdateCommand ();
                 var usage_called = false;
                 var exit_code = command.execute (
-                    new string[] {"vamposer", "update", "--dev", "localhost/this-will-fail", config_path},
+                    new string[] {"vamposer", "update", "--dev", "github.com/ValaFoundation/testcases", config_path},
                     () => { usage_called = true; }
                 );
 

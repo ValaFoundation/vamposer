@@ -231,7 +231,7 @@ namespace AppTests {
   "version": "0.0.1",
   "dependencies": {},
   "dependencies-dev": {
-    "localhost/this-will-fail": "master"
+    "github.com/ValaFoundation/testcases": "master"
   },
   "system_dependencies": {
     "glib-2.0": "*"
@@ -242,18 +242,28 @@ namespace AppTests {
                     assert_not_reached ();
                 }
 
-                bool failed = false;
                 try {
                     Installer.logs_enabled = false;
                     var installer = new Installer ();
+                    DirUtils.create_with_parents (Path.build_filename ("subprojects", "testcases"), 0755);
                     installer.install (config_path, true);
                 } catch (Error e) {
-                    failed = true;
+                    assert_not_reached ();
                 } finally {
                     Installer.logs_enabled = true;
                 }
 
-                assert (failed);
+                var generated_path = Path.build_filename (project_dir, "subprojects", "vamposer.build");
+                assert (FileUtils.test (generated_path, FileTest.EXISTS));
+
+                string contents;
+                try {
+                    FileUtils.get_contents (generated_path, out contents);
+                } catch (Error e) {
+                    assert_not_reached ();
+                }
+
+                assert (contents.contains ("dependency('testcases'"));
             } finally {
                 Environment.set_current_dir (old_cwd);
             }
@@ -495,9 +505,7 @@ namespace AppTests {
                     FileUtils.set_contents (config_path, """
 {
     "dependencies": {},
-    "dependencies-dev": {
-        "localhost/this-will-fail": "master"
-  },
+    "dependencies-dev": {},
   "system_dependencies": {
     "glib-2.0": "*"
   }
@@ -511,10 +519,10 @@ namespace AppTests {
                 try {
                     Installer.logs_enabled = false;
                     var installer = new Installer ();
-                    installer.update (config_path, "localhost/this-will-fail", true);
+                    installer.update (config_path, "github.com/ValaFoundation/testcases", true);
                 } catch (Error e) {
                     failed = true;
-                    assert (!e.message.contains ("Dependency not found"));
+                    assert (e.message.contains ("Dependency not found"));
                 } finally {
                     Installer.logs_enabled = true;
                 }
