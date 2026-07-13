@@ -14,6 +14,8 @@ namespace AppTests {
             add_test ("install_generates_vamposer_build_without_git", test_install_generates_build_file);
             add_test ("install_without_dev_ignores_dev_dependencies", test_install_without_dev_ignores_dev_dependencies);
             add_test ("install_with_dev_tries_dev_dependencies", test_install_with_dev_tries_dev_dependencies);
+            add_test ("install_detects_provide_from_subproject_meson_build", test_install_detects_provide_from_subproject_meson_build);
+            add_test ("install_skips_wrap_when_provide_already_exists_via_redirect", test_install_skips_wrap_when_provide_already_exists_via_redirect);
 #if !WINDOWS
             add_test ("install_continues_on_missing_system_dependency", test_install_continues_on_missing_system_dep);
 #endif
@@ -298,6 +300,169 @@ namespace AppTests {
 
                 assert (contents.contains ("dependency('downloader-lib'"));
                 assert (contents.contains ("dependency('testcases'"));
+            } finally {
+                Environment.set_current_dir (old_cwd);
+            }
+        }
+
+        public void test_install_detects_provide_from_subproject_meson_build () {
+            var old_cwd = Environment.get_current_dir ();
+            string project_dir;
+            try {
+                project_dir = DirUtils.make_tmp ("vamposer-test-XXXXXX");
+            } catch (Error e) {
+                assert_not_reached ();
+            }
+
+            Environment.set_current_dir (project_dir);
+
+            try {
+                var config_path = Path.build_filename (project_dir, "vamposer.json");
+                try {
+                    FileUtils.set_contents (config_path, """
+{
+  "name": "com.example.app",
+  "version": "0.0.1",
+  "dependencies": {
+    "github.com/ValaFoundation/testcases": "master"
+  },
+  "system_dependencies": {
+    "glib-2.0": "*"
+  }
+}
+""");
+                } catch (Error e) {
+                    assert_not_reached ();
+                }
+
+                var subproject_dir = Path.build_filename ("subprojects", "testcases");
+                DirUtils.create_with_parents (subproject_dir, 0755);
+                try {
+                    FileUtils.set_contents (
+                        Path.build_filename (subproject_dir, "meson.build"),
+                        "meson.override_dependency('custom-name', custom_dep)\n"
+                    );
+                } catch (Error e) {
+                    assert_not_reached ();
+                }
+
+                try {
+                    Installer.logs_enabled = false;
+                    var installer = new Installer ();
+                    installer.install (config_path, false);
+                } catch (Error e) {
+                    assert_not_reached ();
+                } finally {
+                    Installer.logs_enabled = true;
+                }
+
+                string wrap_contents;
+                try {
+                    FileUtils.get_contents (Path.build_filename ("subprojects", "testcases.wrap"), out wrap_contents);
+                } catch (Error e) {
+                    assert_not_reached ();
+                }
+
+                assert (wrap_contents.contains ("custom-name = custom_dep"));
+
+                string generated_contents;
+                try {
+                    FileUtils.get_contents (Path.build_filename ("subprojects", "vamposer.build"), out generated_contents);
+                } catch (Error e) {
+                    assert_not_reached ();
+                }
+
+                assert (generated_contents.contains ("dependency('custom-name', fallback: ['testcases', 'custom_dep'])"));
+            } finally {
+                Environment.set_current_dir (old_cwd);
+            }
+        }
+
+        public void test_install_skips_wrap_when_provide_already_exists_via_redirect () {
+            var old_cwd = Environment.get_current_dir ();
+            string project_dir;
+            try {
+                project_dir = DirUtils.make_tmp ("vamposer-test-XXXXXX");
+            } catch (Error e) {
+                assert_not_reached ();
+            }
+
+            Environment.set_current_dir (project_dir);
+
+            try {
+                var config_path = Path.build_filename (project_dir, "vamposer.json");
+                try {
+                    FileUtils.set_contents (config_path, """
+{
+  "name": "com.example.app",
+  "version": "0.0.1",
+  "dependencies": {
+    "github.com/ValaFoundation/testcases": "master"
+  },
+  "system_dependencies": {
+    "glib-2.0": "*"
+  }
+}
+""");
+                } catch (Error e) {
+                    assert_not_reached ();
+                }
+
+                DirUtils.create_with_parents (Path.build_filename ("subprojects", "cache-manager", "subprojects"), 0755);
+                try {
+                    FileUtils.set_contents (
+                        Path.build_filename ("subprojects", "cache-manager", "subprojects", "vala_testcases.wrap"),
+                        """
+[wrap-file]
+directory = vala_testcases
+
+[provide]
+vala_testcases = vala_testcases_dep
+"""
+                    );
+
+                    FileUtils.set_contents (
+                        Path.build_filename ("subprojects", "vala_testcases.wrap"),
+                        """
+[wrap-redirect]
+filename = cache-manager/subprojects/vala_testcases.wrap
+"""
+                    );
+                } catch (Error e) {
+                    assert_not_reached ();
+                }
+
+                var subproject_dir = Path.build_filename ("subprojects", "testcases");
+                DirUtils.create_with_parents (subproject_dir, 0755);
+                try {
+                    FileUtils.set_contents (
+                        Path.build_filename (subproject_dir, "meson.build"),
+                        "meson.override_dependency('vala_testcases', vala_testcases_dep)\n"
+                    );
+                } catch (Error e) {
+                    assert_not_reached ();
+                }
+
+                try {
+                    Installer.logs_enabled = false;
+                    var installer = new Installer ();
+                    installer.install (config_path, false);
+                } catch (Error e) {
+                    assert_not_reached ();
+                } finally {
+                    Installer.logs_enabled = true;
+                }
+
+                assert (!FileUtils.test (Path.build_filename ("subprojects", "testcases.wrap"), FileTest.EXISTS));
+
+                string generated_contents;
+                try {
+                    FileUtils.get_contents (Path.build_filename ("subprojects", "vamposer.build"), out generated_contents);
+                } catch (Error e) {
+                    assert_not_reached ();
+                }
+
+                assert (generated_contents.contains ("dependency('vala_testcases', fallback: ['testcases', 'vala_testcases_dep'])"));
             } finally {
                 Environment.set_current_dir (old_cwd);
             }
