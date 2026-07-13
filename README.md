@@ -125,6 +125,34 @@ $UserPath = [Environment]::GetEnvironmentVariable('Path', 'User')
 Remove-Item -Recurse -Force $InstallDir
 ```
 
+## GitHub Actions
+
+Use the reusable setup action from other repositories:
+
+```yaml
+name: CI
+
+on:
+	push:
+	pull_request:
+
+jobs:
+	test:
+		runs-on: ubuntu-latest
+		steps:
+			- uses: actions/checkout@v4
+
+			- name: Setup Vamposer
+				uses: ValaFoundation/vamposer@v0.7.0
+				with:
+					version: latest
+
+			- name: Verify Vamposer
+				run: vamposer version
+```
+
+`version` can be `latest` (default) or a concrete release like `v0.7.0`.
+
 ### 💻 CLI usage
 
 Initialize a new project config:

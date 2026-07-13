@@ -1,0 +1,54 @@
+name: Action Smoke Test
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    paths:
+      - action.yml
+      - .github/actions/setup-vamposer/action.yml
+      - .github/workflows/action-smoke.yml
+  pull_request:
+    paths:
+      - action.yml
+      - .github/actions/setup-vamposer/action.yml
+      - .github/workflows/action-smoke.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Vamposer (root action)
+        id: setup
+        uses: ./
+        with:
+          version: latest
+
+      - name: Check installed version (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          vamposer version
+          echo "installed-version=${{ steps.setup.outputs.installed-version }}"
+
+      - name: Check installed version (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          vamposer version
+          Write-Output "installed-version=${{ steps.setup.outputs.installed-version }}"
