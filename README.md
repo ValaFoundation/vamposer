@@ -149,6 +149,8 @@ jobs:
 
 			- name: Verify Vamposer
 				run: vamposer version
+			- name: Install vamposer dependencies
+        		run: vamposer install --dev
 ```
 
 `version` can be `latest` (default) or a concrete release like `v0.7.0`.
