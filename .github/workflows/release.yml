@@ -449,7 +449,7 @@ jobs:
             fi
 
             changes_found=false
-            while IFS='|' read -r commit_sha commit_subject; do
+            while IFS='|' read -r commit_sha commit_subject || [ -n "${commit_sha}" ]; do
               [ -n "${commit_sha}" ] || continue
               changes_found=true
               github_login="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${commit_sha}" --jq '.author.login // empty' 2>/dev/null || true)"
