@@ -133,24 +133,25 @@ Use the reusable setup action from other repositories:
 name: CI
 
 on:
-	push:
-	pull_request:
+  push:
+  pull_request:
 
 jobs:
-	test:
-		runs-on: ubuntu-latest
-		steps:
-			- uses: actions/checkout@v7
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
 
-			- name: Setup Vamposer
-				uses: ValaFoundation/vamposer@v0.7.0
-				with:
-					version: latest
+      - name: Setup Vamposer
+        uses: ValaFoundation/vamposer@v0.7.1
+        with:
+          version: latest
 
-			- name: Verify Vamposer
-				run: vamposer version
-			- name: Install vamposer dependencies
-        		run: vamposer install --dev
+      - name: Verify Vamposer
+        run: vamposer version
+
+      - name: Install vamposer dependencies
+        run: vamposer install --dev
 ```
 
 `version` can be `latest` (default) or a concrete release like `v0.7.0`.
