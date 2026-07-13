@@ -1,0 +1,198 @@
+name: Arch AUR Publish
+
+on:
+  workflow_run:
+    workflows:
+      - Release Build
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to publish (tag, branch, or SHA)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  publish-aur:
+    name: Publish to AUR
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    if: >-
+      ${{
+        github.event_name == 'workflow_dispatch' ||
+        (
+          github.event_name == 'workflow_run' &&
+          github.event.workflow_run.conclusion == 'success'
+        )
+      }}
+    container:
+      image: archlinux:latest
+    env:
+      AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+      AUR_PACKAGE_NAME: ${{ vars.AUR_PACKAGE_NAME }}
+    steps:
+      - name: Validate AUR configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${AUR_SSH_PRIVATE_KEY:-}" ]]; then
+            echo "::error::Missing required secret AUR_SSH_PRIVATE_KEY."
+            exit 1
+          fi
+
+      - name: Install Arch tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm --needed \
+            archlinux-keyring \
+            base-devel \
+            curl \
+            git \
+            openssh
+
+      - name: Checkout source
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.event.inputs.ref || github.ref }}
+
+      - name: Resolve release version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          RELEASE_TAG=""
+
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_run" ]]; then
+            RELEASE_TAG="${{ github.event.workflow_run.head_branch }}"
+          fi
+
+          if [[ -z "${RELEASE_TAG}" ]]; then
+            RELEASE_TAG="${GITHUB_REF_NAME:-}"
+          fi
+
+          if [[ -z "${RELEASE_TAG}" ]]; then
+            RELEASE_TAG="$(git tag --points-at HEAD | head -n1 || true)"
+          fi
+
+          if [[ -z "${RELEASE_TAG}" || "${RELEASE_TAG}" != v* ]]; then
+            echo "::notice::No release tag found, skipping AUR publish."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          VERSION="${RELEASE_TAG#v}"
+          REPO_NAME="${GITHUB_REPOSITORY##*/}"
+          PKG_NAME="${AUR_PACKAGE_NAME:-${REPO_NAME}}"
+
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "tag=${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "repo_name=${REPO_NAME}" >> "$GITHUB_OUTPUT"
+          echo "pkg_name=${PKG_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare AUR metadata
+        if: steps.version.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TAG="${{ steps.version.outputs.tag }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          REPO_NAME="${{ steps.version.outputs.repo_name }}"
+          PKG_NAME="${{ steps.version.outputs.pkg_name }}"
+          SOURCE_URL="https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${TAG}.tar.gz"
+
+          curl -fsSL "${SOURCE_URL}" -o source.tar.gz
+          SOURCE_SHA256="$(sha256sum source.tar.gz | awk '{print $1}')"
+
+          cat > PKGBUILD <<EOF
+          pkgname=${PKG_NAME}
+          pkgver=${VERSION}
+          pkgrel=1
+          pkgdesc='Dependency manager for Vala projects'
+          arch=('x86_64')
+          url='https://github.com/${GITHUB_REPOSITORY}'
+          license=('Apache')
+          depends=('glib2' 'libgee' 'json-glib')
+          makedepends=('meson' 'ninja' 'vala' 'pkgconf' 'git')
+          source=("\${pkgname}-\${pkgver}.tar.gz::${SOURCE_URL}")
+          sha256sums=('${SOURCE_SHA256}')
+
+          build() {
+            local src_dir
+            src_dir="$(find "\${srcdir}" -mindepth 1 -maxdepth 1 -type d -name '${REPO_NAME}-*' | head -n1)"
+            if [[ -z "\${src_dir}" ]]; then
+              echo "Unable to locate unpacked source directory in \${srcdir}" >&2
+              return 1
+            fi
+            arch-meson "\${src_dir}" build -Dbuild_tests=false
+            meson compile -C build
+          }
+
+          package() {
+            DESTDIR="\${pkgdir}" meson install -C build
+          }
+          EOF
+
+          makepkg --printsrcinfo > .SRCINFO
+
+      - name: Configure SSH for AUR
+        if: steps.version.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${AUR_SSH_PRIVATE_KEY}" > ~/.ssh/aur
+          chmod 600 ~/.ssh/aur
+          ssh-keyscan -t rsa,ed25519 aur.archlinux.org >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+          eval "$(ssh-agent -s)"
+          ssh-add ~/.ssh/aur
+
+          {
+            echo "Host aur.archlinux.org"
+            echo "  User aur"
+            echo "  IdentityFile ~/.ssh/aur"
+            echo "  IdentitiesOnly yes"
+            echo "  StrictHostKeyChecking yes"
+          } >> ~/.ssh/config
+
+      - name: Push update to AUR
+        if: steps.version.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PKG_NAME="${{ steps.version.outputs.pkg_name }}"
+          git clone "ssh://aur@aur.archlinux.org/${PKG_NAME}.git" aur-repo
+
+          cp -f PKGBUILD .SRCINFO aur-repo/
+
+          cd aur-repo
+          if git diff --quiet -- PKGBUILD .SRCINFO; then
+            echo "No AUR changes detected for ${PKG_NAME}."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PKGBUILD .SRCINFO
+          git commit -m "Update to v${{ steps.version.outputs.version }}"
+          git push origin HEAD:master
+
+      - name: AUR publish is best-effort
+        if: failure()
+        run: |
+          echo "::warning::AUR publish failed. GitHub release remains published; verify AUR key access and package permissions, then rerun workflow_dispatch."
