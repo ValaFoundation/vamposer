@@ -152,6 +152,7 @@ jobs:
 ```
 
 `version` can be `latest` (default) or a concrete release like `v0.7.0`.
+The action output `installed-version` is resolved from `vamposer version` on Linux; on Windows it reports the requested input value.
 
 ### 💻 CLI usage
 

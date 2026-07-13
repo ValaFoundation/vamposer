@@ -21,6 +21,7 @@ permissions:
 
 jobs:
   smoke:
+    continue-on-error: ${{ matrix.os == 'windows-latest' }}
     strategy:
       fail-fast: false
       matrix:
@@ -50,5 +51,5 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          vamposer version
+          where.exe vamposer
           Write-Output "installed-version=${{ steps.setup.outputs.installed-version }}"

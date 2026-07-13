@@ -9,8 +9,8 @@ inputs:
 
 outputs:
   installed-version:
-    description: "Installed Vamposer version"
-    value: ${{ steps.report.outputs.installed_version }}
+    description: "Installed Vamposer version (Linux resolved, Windows requested input)"
+    value: ${{ steps.report_linux.outputs.installed_version || steps.report_windows.outputs.installed_version }}
 
 runs:
   using: composite
@@ -117,8 +117,9 @@ runs:
         echo "Unsupported runner OS: $RUNNER_OS" >&2
         exit 1
 
-    - name: Report installed version
-      id: report
+    - name: Report installed version (Linux)
+      if: runner.os == 'Linux'
+      id: report_linux
       shell: bash
       run: |
         set -euo pipefail
@@ -128,3 +129,14 @@ runs:
           value='unknown'
         fi
         echo "installed_version=${value}" >> "$GITHUB_OUTPUT"
+
+    - name: Report installed version (Windows)
+      if: runner.os == 'Windows'
+      id: report_windows
+      shell: pwsh
+      run: |
+        $version = '${{ inputs.version }}'
+        if ([string]::IsNullOrWhiteSpace($version)) {
+          $version = 'latest'
+        }
+        Add-Content -Path $env:GITHUB_OUTPUT -Value "installed_version=$version"
