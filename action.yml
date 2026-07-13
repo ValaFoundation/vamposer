@@ -1,5 +1,8 @@
 name: Setup Vamposer
 description: Install Vamposer binary from GitHub Releases and add it to PATH
+branding:
+  icon: package
+  color: blue
 
 inputs:
   version:
