@@ -15,6 +15,20 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Install Vamposer runtime dependencies (Linux)
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        if command -v apt-get >/dev/null 2>&1 && command -v sudo >/dev/null 2>&1; then
+          sudo apt-get update
+          sudo apt-get install -y \
+            libglib2.0-0 \
+            libgee-0.8-2 \
+            libjson-glib-1.0-0
+        fi
+
     - name: Install Vamposer (Linux)
       if: runner.os == 'Linux'
       shell: bash
