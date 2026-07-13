@@ -429,14 +429,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           CURRENT_TAG="${GITHUB_REF_NAME}"
-          PREVIOUS_TAG="$(git tag --sort=-version:refname | awk -v current_tag="${CURRENT_TAG}" '
-            found { print; exit }
-            $0 == current_tag { found = 1 }
-          ' || true)"
+          CURRENT_COMMIT="$(git rev-list -n1 "${CURRENT_TAG}")"
+          PREVIOUS_TAG="$(git describe --tags --abbrev=0 "${CURRENT_COMMIT}^" 2>/dev/null || true)"
           if [ -n "${PREVIOUS_TAG}" ]; then
-            RELEASE_RANGE="${PREVIOUS_TAG}..${CURRENT_TAG}"
+            RELEASE_RANGE="${PREVIOUS_TAG}..${CURRENT_COMMIT}"
           else
-            RELEASE_RANGE="${CURRENT_TAG}"
+            RELEASE_RANGE="${CURRENT_COMMIT}"
           fi
 
           {
