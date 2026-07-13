@@ -4,6 +4,8 @@ namespace Vamposer {
     public class DependencyResolver : Object {
         private const string REMOTE_ALIAS_URL = "https://raw.githubusercontent.com/ValaFoundation/vamposer/master/vamposer.aliases.json";
         private static HashMap<string, string>? cached_aliases = null;
+        private static ArrayList<string>? configured_alias_sources = null;
+        private static HashMap<string, string>? configured_aliases = null;
 
         public static ResolvedDependency resolve (string source_id, string revision) {
             var canonical_source_id = canonicalize_source_id (source_id);
@@ -42,6 +44,28 @@ namespace Vamposer {
             }
 
             return repository_url;
+        }
+
+        public static void configure_alias_overrides (ArrayList<string> alias_sources, HashMap<string, string> aliases) {
+            ensure_alias_override_state ();
+            configured_alias_sources = new ArrayList<string> ();
+            foreach (var source in alias_sources) {
+                var cleaned_source = source.strip ();
+                if (cleaned_source != "") {
+                    configured_alias_sources.add (cleaned_source);
+                }
+            }
+
+            configured_aliases = new HashMap<string, string> ();
+            foreach (var entry in aliases.entries) {
+                var alias_key = entry.key.strip ();
+                var alias_target = entry.value.strip ();
+                if (alias_key != "" && alias_target != "") {
+                    configured_aliases.set (alias_key, alias_target);
+                }
+            }
+
+            cached_aliases = null;
         }
 
         public static string extract_project_name (string source_id) {
@@ -104,6 +128,8 @@ namespace Vamposer {
         }
 
         private static HashMap<string, string> get_aliases () {
+            ensure_alias_override_state ();
+
             if (cached_aliases != null) {
                 return cached_aliases;
             }
@@ -116,8 +142,30 @@ namespace Vamposer {
                 // Best-effort load: remote alias source is optional.
             }
 
+            foreach (var source in configured_alias_sources) {
+                try {
+                    merge_aliases_from_url (source, aliases);
+                } catch (Error e) {
+                    // Best-effort load: invalid or unreachable configured source should not block install.
+                }
+            }
+
+            foreach (var entry in configured_aliases.entries) {
+                aliases.set (entry.key, entry.value);
+            }
+
             cached_aliases = aliases;
             return aliases;
+        }
+
+        private static void ensure_alias_override_state () {
+            if (configured_alias_sources == null) {
+                configured_alias_sources = new ArrayList<string> ();
+            }
+
+            if (configured_aliases == null) {
+                configured_aliases = new HashMap<string, string> ();
+            }
         }
 
         private static void merge_aliases_from_url (string alias_url, HashMap<string, string> aliases) throws Error {

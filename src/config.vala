@@ -10,11 +10,15 @@ namespace Vamposer {
         public HashMap<string, string> dependencies { get; private set; }
         public HashMap<string, string> dev_dependencies { get; private set; }
         public HashMap<string, string> system_dependencies { get; private set; }
+        public HashMap<string, string> aliases { get; private set; }
+        public ArrayList<string> alias_sources { get; private set; }
 
         public PackageConfig () {
             dependencies = new HashMap<string, string> ();
             dev_dependencies = new HashMap<string, string> ();
             system_dependencies = new HashMap<string, string> ();
+            aliases = new HashMap<string, string> ();
+            alias_sources = new ArrayList<string> ();
         }
 
         public static PackageConfig create_empty () {
@@ -50,6 +54,8 @@ namespace Vamposer {
             config.dependencies = load_string_map (root_object, "dependencies");
             config.dev_dependencies = load_string_map (root_object, "dependencies-dev");
             config.system_dependencies = load_string_map (root_object, "system_dependencies");
+            config.aliases = load_string_map (root_object, "aliases");
+            config.alias_sources = load_string_list (root_object, "alias_sources");
 
             return config;
         }
@@ -74,6 +80,8 @@ namespace Vamposer {
             add_string_map (builder, "dependencies", dependencies);
             add_string_map (builder, "dependencies-dev", dev_dependencies);
             add_string_map (builder, "system_dependencies", system_dependencies);
+            add_string_map (builder, "aliases", aliases);
+            add_string_list (builder, "alias_sources", alias_sources);
 
             builder.end_object ();
 
@@ -121,6 +129,45 @@ namespace Vamposer {
             }
 
             builder.end_object ();
+        }
+
+        private static ArrayList<string> load_string_list (Json.Object root_object, string field) throws Error {
+            var result = new ArrayList<string> ();
+
+            if (!root_object.has_member (field)) {
+                return result;
+            }
+
+            var section_node = root_object.get_member (field);
+            if (section_node == null || section_node.get_node_type () != NodeType.ARRAY) {
+                throw new FileError.INVAL ("Field '%s' must be a JSON array".printf (field));
+            }
+
+            var array = root_object.get_array_member (field);
+            for (uint i = 0; i < array.get_length (); i++) {
+                var value_node = array.get_element (i);
+                if (value_node == null || value_node.get_node_type () != NodeType.VALUE || !value_node.get_value ().holds (typeof (string))) {
+                    throw new FileError.INVAL ("Value '%s[%u]' must be a string".printf (field, i));
+                }
+
+                var value = array.get_string_element (i).strip ();
+                if (value != "") {
+                    result.add (value);
+                }
+            }
+
+            return result;
+        }
+
+        private static void add_string_list (Builder builder, string field, ArrayList<string> values) {
+            builder.set_member_name (field);
+            builder.begin_array ();
+
+            foreach (var value in values) {
+                builder.add_string_value (value);
+            }
+
+            builder.end_array ();
         }
     }
 }

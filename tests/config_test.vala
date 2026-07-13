@@ -7,6 +7,7 @@ namespace AppTests {
         construct {
             add_test ("config_loads_valid_json", test_config_loads_valid_json);
             add_test ("config_fails_on_non_object_dependencies", test_config_fails_on_non_object_dependencies);
+          add_test ("config_loads_aliases_and_alias_sources", test_config_loads_aliases_and_alias_sources);
         }
 
         public void test_config_loads_valid_json () {
@@ -70,6 +71,37 @@ namespace AppTests {
             }
 
             assert (failed);
+        }
+
+        public void test_config_loads_aliases_and_alias_sources () {
+            string path;
+            try {
+                path = write_temp_json ("""
+{
+  "aliases": {
+    "my-lib": "github.com/MyOrg/my-lib"
+  },
+  "alias_sources": [
+    "https://example.com/vamposer.aliases.json",
+    "https://example.org/aliases.json"
+  ]
+}
+""");
+            } catch (Error e) {
+                assert_not_reached ();
+            }
+
+            PackageConfig? config = null;
+            try {
+                config = PackageConfig.load (path);
+            } catch (Error e) {
+                assert_not_reached ();
+            }
+
+            assert (config.aliases.get ("my-lib") == "github.com/MyOrg/my-lib");
+            assert (config.alias_sources.size == 2);
+            assert (config.alias_sources.get (0) == "https://example.com/vamposer.aliases.json");
+            assert (config.alias_sources.get (1) == "https://example.org/aliases.json");
         }
 
         private string write_temp_json (string content) throws Error {

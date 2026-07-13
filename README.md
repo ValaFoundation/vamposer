@@ -222,7 +222,8 @@ Global aliases are also fetched from:
 
 Want your library/package alias included globally? Open a PR against `vamposer.aliases.json` in this repository.
 
-Use the dedicated PR template: `.github/PULL_REQUEST_TEMPLATE/add-package-alias.md`.
+Project-level aliases in `vamposer.json` are also supported.
+Use `aliases` for direct key/value overrides and `alias_sources` for one or more extra remote JSON alias lists.
 
 Add or update a development dependency in config:
 
@@ -310,6 +311,14 @@ Current official release artifacts target `x86_64` only. Support for additional 
 	"dependencies-dev": {
 		"github.com/ValaFoundation/dev-tools": "master"
 	},
+	"aliases": {
+		"my-lib": "github.com/MyOrg/my-lib",
+		"ValaFoundation/testcases": "gitlab.com/MyOrg/testcases-fork"
+	},
+	"alias_sources": [
+		"https://example.com/vamposer.aliases.json",
+		"https://raw.githubusercontent.com/MyOrg/vamposer-aliases/main/aliases.json"
+	],
 	"system_dependencies": {
 		"gtk4": ">=4.10",
 		"libadwaita-1": ">=1.4",

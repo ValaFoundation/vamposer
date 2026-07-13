@@ -69,6 +69,7 @@ namespace Vamposer {
         internal void run_install (string config_path, string? only_source_id, bool force_reclone, bool include_dev) throws Error {
             log ("[Vamposer] Loading config %s\n", config_path);
             var config = PackageConfig.load (config_path);
+            DependencyResolver.configure_alias_overrides (config.alias_sources, config.aliases);
             var all_dependencies = collect_all_dependencies (config, include_dev);
 
             ensure_subprojects_directory ();
@@ -102,6 +103,7 @@ namespace Vamposer {
         }
 
         internal ArrayList<ResolvedDependency> build_resolved_dependencies (PackageConfig config, bool include_dev = true) {
+            DependencyResolver.configure_alias_overrides (config.alias_sources, config.aliases);
             var resolved_dependencies = new ArrayList<ResolvedDependency> ();
             var all_dependencies = collect_all_dependencies (config, include_dev);
             foreach (var entry in all_dependencies.entries) {
