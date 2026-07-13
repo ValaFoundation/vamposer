@@ -77,6 +77,7 @@ namespace Vamposer {
             if (message.contains ("Done.")
                 || message.contains ("Upgraded executable")
                 || message.contains ("Upgrade scheduled")
+                || message.contains ("Already up to date")
                 || message.contains ("Installed system package")
                 || message.contains ("Added dependency")
                 || message.contains ("Removed dependency")) {

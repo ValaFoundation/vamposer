@@ -30,7 +30,7 @@ namespace Vamposer.InstallerOperations {
 
                 var current_checksum = installer.calculate_sha256 (target_path);
                 if (current_checksum == actual_checksum) {
-                    installer.log ("[Vamposer] Already up to date: %s\n", target_path);
+                    installer.log ("[Vamposer] Already up to date: %s (%s)\n", APP_VERSION, target_path);
                     return;
                 }
 
