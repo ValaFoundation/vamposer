@@ -220,10 +220,9 @@ Global aliases are also fetched from:
 
 `https://github.com/ValaFoundation/vamposer` (`vamposer.aliases.json` on `master` via raw.githubusercontent.com)
 
-Load order:
+Want your library/package alias included globally? Open a PR against `vamposer.aliases.json` in this repository.
 
-- remote alias list from ValaFoundation/vamposer
-- local `vamposer.aliases.json` (overrides remote keys)
+Use the dedicated PR template: `.github/PULL_REQUEST_TEMPLATE/add-package-alias.md`.
 
 Add or update a development dependency in config:
 
