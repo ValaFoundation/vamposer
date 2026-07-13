@@ -28,6 +28,12 @@ namespace Vamposer.InstallerOperations {
                     throw new IOError.FAILED ("Downloaded Vamposer checksum mismatch");
                 }
 
+                var current_checksum = installer.calculate_sha256 (target_path);
+                if (current_checksum == actual_checksum) {
+                    installer.log ("[Vamposer] Already up to date: %s\n", target_path);
+                    return;
+                }
+
 #if WINDOWS
                 installer.schedule_windows_replacement (downloaded_path, target_path, temp_dir);
                 cleanup_temp_dir = false;
