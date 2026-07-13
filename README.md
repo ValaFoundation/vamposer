@@ -31,6 +31,8 @@ Dependency manager for Vala projects inspired by Composer/Go modules and integra
 	- includes distro package-name mapping for common pkg-config names (e.g. `gtk4`, `libadwaita-1`, `gee-0.8`)
 	- unresolved system deps are reported as warning and install continues with VCS dependencies
 - resolving Git-like dependency IDs to repository URLs
+	- first expanding aliases from `vamposer.aliases.json` (if present in project root)
+	- then applying `owner/repo` shortcut resolution
 - cloning dependencies into `subprojects/<project-name>`
 - generating Meson helper files:
 	- `vamposer/meson.build`
@@ -202,6 +204,26 @@ Add or update a dependency in config:
 ```bash
 vamposer require github.com/ValaFoundation/testcases master
 ```
+
+Package aliases source:
+
+```json
+{
+	"ValaFoundation/testcases": "github.com/ValaFoundation/testcases",
+	"YourOrg/your-repo": "github.com/YourOrg/your-repo"
+}
+```
+
+Vamposer loads aliases from `https://raw.githubusercontent.com/ValaFoundation/vamposer/master/vamposer.aliases.json` (before automatic host expansion). Alias targets are expected as repository IDs (`owner/repo`, `github.com/owner/repo`, or full URL).
+
+Global aliases are also fetched from:
+
+`https://github.com/ValaFoundation/vamposer` (`vamposer.aliases.json` on `master` via raw.githubusercontent.com)
+
+Load order:
+
+- remote alias list from ValaFoundation/vamposer
+- local `vamposer.aliases.json` (overrides remote keys)
 
 Add or update a development dependency in config:
 

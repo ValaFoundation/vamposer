@@ -8,6 +8,7 @@ namespace AppTests {
             add_test ("resolver_short_form_to_https_git", test_short_form_to_https_git);
             add_test ("resolver_keeps_https_and_appends_git", test_https_normalization);
             add_test ("resolver_supports_gitlab_ssh_form", test_gitlab_ssh_form);
+            add_test ("resolver_supports_owner_repo_shortcut", test_owner_repo_shortcut);
             add_test ("resolver_extracts_project_name", test_extract_project_name);
         }
 
@@ -24,6 +25,11 @@ namespace AppTests {
         public void test_gitlab_ssh_form () {
             var url = DependencyResolver.normalize_repository_url ("git@gitlab.com:group/project");
             assert (url == "git@gitlab.com:group/project.git");
+        }
+
+        public void test_owner_repo_shortcut () {
+            var url = DependencyResolver.normalize_repository_url ("ValaFoundation/testcases");
+            assert (url == "https://github.com/ValaFoundation/testcases.git");
         }
 
         public void test_extract_project_name () {
