@@ -2,5 +2,17 @@
   "ValaFoundation/testcases": "github.com/ValaFoundation/testcases",
   "ValaFoundation/downloader-lib": "github.com/ValaFoundation/downloader-lib",
   "ValaFoundation/cache-manager": "github.com/ValaFoundation/cache-manager",
-  "ValaFoundation/finder": "github.com/ValaFoundation/finder"
+  "ValaFoundation/finder": "github.com/ValaFoundation/finder",
+  "elementary/granite": "github.com/elementary/granite",
+  "GNOME/vala": "gitlab.gnome.org/GNOME/vala",
+  "GNOME/glib": "gitlab.gnome.org/GNOME/glib",
+  "GNOME/gobject-introspection": "gitlab.gnome.org/GNOME/gobject-introspection",
+  "GNOME/json-glib": "gitlab.gnome.org/GNOME/json-glib",
+  "GNOME/libgee": "gitlab.gnome.org/GNOME/libgee",
+  "GNOME/libadwaita": "gitlab.gnome.org/GNOME/libadwaita",
+  "GNOME/libpeas": "gitlab.gnome.org/GNOME/libpeas",
+  "GNOME/libsoup": "gitlab.gnome.org/GNOME/libsoup",
+  "GNOME/gtk": "gitlab.gnome.org/GNOME/gtk",
+  "GNOME/gtksourceview": "gitlab.gnome.org/GNOME/gtksourceview",
+  "GNOME/vte": "gitlab.gnome.org/GNOME/vte"
 }
