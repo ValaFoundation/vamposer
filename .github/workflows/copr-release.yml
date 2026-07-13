@@ -1,0 +1,206 @@
+name: Fedora COPR Publish
+
+on:
+  workflow_run:
+    workflows:
+      - Release Build
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to publish (tag, branch, or SHA)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  submit-copr:
+    name: Submit COPR Build
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    if: >-
+      ${{
+        github.event_name == 'workflow_dispatch' ||
+        (
+          github.event_name == 'workflow_run' &&
+          github.event.workflow_run.conclusion == 'success'
+        )
+      }}
+    container:
+      image: fedora:latest
+    env:
+      COPR_LOGIN: ${{ secrets.COPR_LOGIN }}
+      COPR_TOKEN: ${{ secrets.COPR_TOKEN }}
+      COPR_PROJECT: ${{ vars.COPR_PROJECT }}
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+    steps:
+      - name: Validate COPR configuration
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${COPR_LOGIN:-}" || -z "${COPR_TOKEN:-}" ]]; then
+            echo "::error::Missing required secrets COPR_LOGIN and/or COPR_TOKEN."
+            exit 1
+          fi
+
+          if [[ -z "${COPR_PROJECT:-}" ]]; then
+            echo "::error::Missing repository variable COPR_PROJECT (for example: your-copr-group/vamposer)."
+            exit 1
+          fi
+
+      - name: Install Fedora packaging dependencies
+        run: |
+          set -euo pipefail
+          dnf -y update
+          dnf -y install \
+            copr-cli \
+            git \
+            make \
+            meson \
+            ninja-build \
+            rpm-build \
+            vala \
+            gcc \
+            pkgconf-pkg-config \
+            glib2-devel \
+            libgee-devel \
+            json-glib-devel
+
+      - name: Checkout source
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.event.inputs.ref || github.ref }}
+
+      - name: Resolve release version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          RELEASE_TAG=""
+
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_run" ]]; then
+            RELEASE_TAG="${{ github.event.workflow_run.head_branch }}"
+          fi
+
+          if [[ -z "${RELEASE_TAG}" ]]; then
+            RELEASE_TAG="${GITHUB_REF_NAME:-}"
+          fi
+
+          if [[ -z "${RELEASE_TAG}" ]]; then
+            RELEASE_TAG="$(git tag --points-at HEAD | head -n1 || true)"
+          fi
+
+          if [[ -z "${RELEASE_TAG}" || "${RELEASE_TAG}" != v* ]]; then
+            echo "::notice::No release tag found, skipping COPR submission."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          VERSION="${RELEASE_TAG#v}"
+
+          if [[ -z "${VERSION}" ]]; then
+            echo "::error::Unable to derive version from tag ${RELEASE_TAG}."
+            exit 1
+          fi
+
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "tag=${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Build source RPM
+        if: steps.version.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          VERSION="${{ steps.version.outputs.version }}"
+          TAG="${{ steps.version.outputs.tag }}"
+
+          git archive --format=tar.gz --prefix="vamposer-${VERSION}/" --output="vamposer-${VERSION}.tar.gz" "${TAG}"
+
+          mkdir -p rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+          cp -f "vamposer-${VERSION}.tar.gz" rpmbuild/SOURCES/
+
+          cat > rpmbuild/SPECS/vamposer.spec <<EOF
+          Name:           vamposer
+          Version:        ${VERSION}
+          Release:        1%{?dist}
+          Summary:        Dependency manager for Vala projects
+          License:        Apache-2.0
+          URL:            https://github.com/ValaFoundation/vamposer
+          Source0:        %{name}-%{version}.tar.gz
+
+          BuildRequires:  meson
+          BuildRequires:  ninja-build
+          BuildRequires:  vala
+          BuildRequires:  gcc
+          BuildRequires:  pkgconf-pkg-config
+          BuildRequires:  glib2-devel
+          BuildRequires:  libgee-devel
+          BuildRequires:  json-glib-devel
+
+          Requires:       glib2
+          Requires:       libgee
+          Requires:       json-glib
+
+          %description
+          Vamposer manages git and system dependencies for Vala/Meson apps.
+
+          %prep
+          %autosetup
+
+          %build
+          %meson
+          %meson_build
+
+          %install
+          %meson_install
+
+          %files
+          %{_bindir}/vamposer
+
+          %changelog
+          * Mon Jul 13 2026 ValaFoundation <team@valafoundation.github.io> - ${VERSION}-1
+          - Automated COPR release submission
+          EOF
+
+          rpmbuild -bs --define "_topdir $(pwd)/rpmbuild" rpmbuild/SPECS/vamposer.spec
+
+      - name: Configure copr-cli
+        if: steps.version.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p ~/.config
+          cat > ~/.config/copr <<EOF
+          [copr-cli]
+          login = ${COPR_LOGIN}
+          token = ${COPR_TOKEN}
+          copr_url = https://copr.fedorainfracloud.org
+          EOF
+          chmod 0600 ~/.config/copr
+
+      - name: Submit build to COPR
+        if: steps.version.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SRPM_PATH="$(ls -1 rpmbuild/SRPMS/*.src.rpm | head -n1)"
+          if [[ -z "${SRPM_PATH}" ]]; then
+            echo "::error::No source RPM produced."
+            exit 1
+          fi
+
+          copr-cli build "${COPR_PROJECT}" "${SRPM_PATH}"
+
+      - name: COPR publish is best-effort
+        if: failure()
+        run: |
+          echo "::warning::COPR publish failed. GitHub release remains published; investigate COPR credentials/project permissions and rerun workflow_dispatch."
