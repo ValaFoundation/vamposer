@@ -1,5 +1,32 @@
 # Vamposer
 
+<p align="center">
+	<strong>Composer-style dependency workflow for Vala + Meson</strong><br/>
+	Resolve packages, install system deps, and generate subproject wiring automatically.
+</p>
+
+<p align="center">
+	<a href="#-run"><strong>Install</strong></a>
+	·
+	<a href="#-cli-usage"><strong>CLI</strong></a>
+	·
+	<a href="#github-actions"><strong>GitHub Actions</strong></a>
+	·
+	<a href="#-meson-integration"><strong>Meson</strong></a>
+	·
+	<a href="#-build"><strong>Build</strong></a>
+	·
+	<a href="#-test"><strong>Test</strong></a>
+</p>
+
+> [!TIP]
+> Quick start:
+>
+> ```bash
+> vamposer init
+> vamposer install --dev
+> ```
+
 Dependency manager for Vala projects inspired by Composer/Go modules and integrated with Meson subprojects.
 
 
@@ -18,6 +45,22 @@ Dependency manager for Vala projects inspired by Composer/Go modules and integra
 ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues-closed/ValaFoundation/vamposer?style=for-the-badge)
 ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues-pr/ValaFoundation/vamposer?style=for-the-badge)
 ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues-pr-closed/ValaFoundation/vamposer?style=for-the-badge)
+
+
+## 📚 Contents
+
+| Section | What you get |
+| --- | --- |
+| [✨ What it does](#-what-it-does) | Overview of what `vamposer install` resolves, installs, and generates |
+| [🚀 Run](#-run) | Install instructions for Linux and Windows |
+| [GitHub Actions](#github-actions) | Reusable workflow setup for CI |
+| [💻 CLI usage](#-cli-usage) | Core commands (`init`, `install`, `version`, `completion`) |
+| [📦 Release artifacts](#-release-artifacts) | What gets published in releases |
+| [⚙️ Config format](#-config-format) | `vamposer.json` schema and dependency structure |
+| [🧩 Meson integration](#-meson-integration) | Generated Meson/wrap files and integration notes |
+| [🛠️ Build](#-build) | Distro-specific system deps and build steps |
+| [✅ Test](#-test) | Test execution commands |
+| [📄 License](#-license) | License and legal metadata |
 
 
 
@@ -252,7 +295,7 @@ Global aliases are also fetched from:
 
 `https://github.com/ValaFoundation/vamposer` (`vamposer.aliases.json` on `master` via raw.githubusercontent.com)
 
-Want your library/package alias included globally? Open a PR against `vamposer.aliases.json` in this repository.
+Want your library/package alias included globally? Open a PR against `vamposer.aliases.json` in this repository or write to [[Alias] Requests](https://github.com/ValaFoundation/vamposer/discussions/3).
 
 Project-level aliases in `vamposer.json` are also supported.
 Use `aliases` for direct key/value overrides and `alias_sources` for one or more extra remote JSON alias lists.
