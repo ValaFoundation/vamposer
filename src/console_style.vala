@@ -2,6 +2,10 @@ namespace Vamposer {
     public class ConsoleStyle : Object {
         private static bool? colors_enabled_cache = null;
 
+        public static void reset_color_cache () {
+            colors_enabled_cache = null;
+        }
+
         private static bool colors_enabled () {
             if (colors_enabled_cache != null) {
                 return colors_enabled_cache;
