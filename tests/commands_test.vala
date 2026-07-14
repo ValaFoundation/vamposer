@@ -7,18 +7,30 @@ namespace AppTests {
     public class CommandsTest : BaseTest {
         construct {
             add_test ("help_command_invokes_usage", test_help_command_invokes_usage);
+            add_test ("completion_command_help_invokes_usage", test_completion_command_help_invokes_usage);
+            add_test ("completion_command_rejects_unknown_action", test_completion_command_rejects_unknown_action);
+            add_test ("init_command_help_invokes_usage", test_init_command_help_invokes_usage);
             add_test ("init_command_creates_custom_config", test_init_command_creates_custom_config);
+            add_test ("install_command_help_invokes_usage", test_install_command_help_invokes_usage);
             add_test ("install_command_uses_custom_config", test_install_command_uses_custom_config);
             add_test ("install_command_accepts_dev_flag", test_install_command_accepts_dev_flag);
             add_test ("install_command_rejects_unknown_option", test_install_command_rejects_unknown_option);
             add_test ("version_command_succeeds_without_arguments", test_version_command_succeeds_without_arguments);
             add_test ("version_command_rejects_extra_arguments", test_version_command_rejects_extra_arguments);
             add_test ("require_command_missing_dependency_returns_error", test_require_command_missing_dependency_returns_error);
+            add_test ("require_command_help_invokes_usage", test_require_command_help_invokes_usage);
+            add_test ("require_command_rejects_unknown_option", test_require_command_rejects_unknown_option);
+            add_test ("require_command_rejects_too_many_positionals", test_require_command_rejects_too_many_positionals);
             add_test ("require_command_writes_dependency", test_require_command_writes_dependency);
             add_test ("require_command_dev_writes_dev_dependency", test_require_command_dev_writes_dev_dependency);
             add_test ("remove_command_missing_dependency_returns_error", test_remove_command_missing_dependency_returns_error);
+            add_test ("remove_command_help_invokes_usage", test_remove_command_help_invokes_usage);
+            add_test ("remove_command_rejects_too_many_positionals", test_remove_command_rejects_too_many_positionals);
             add_test ("remove_command_dev_removes_dev_dependency", test_remove_command_dev_removes_dev_dependency);
             add_test ("update_command_missing_named_dependency_returns_error", test_update_command_missing_named_dependency_returns_error);
+            add_test ("update_command_help_invokes_usage", test_update_command_help_invokes_usage);
+            add_test ("update_command_rejects_unknown_option", test_update_command_rejects_unknown_option);
+            add_test ("update_command_rejects_too_many_positionals", test_update_command_rejects_too_many_positionals);
             add_test ("update_command_accepts_dev_flag", test_update_command_accepts_dev_flag);
             add_test ("self_upgrade_command_unknown_executable_returns_error", test_self_upgrade_command_unknown_executable_returns_error);
         }
@@ -31,6 +43,28 @@ namespace AppTests {
             });
 
             assert (exit_code == 0);
+            assert (usage_called);
+        }
+
+        public void test_completion_command_help_invokes_usage () {
+            var command = new CompletionCommand ();
+            var usage_called = false;
+            var exit_code = command.execute (new string[] {"vamposer", "completion", "--help"}, () => {
+                usage_called = true;
+            });
+
+            assert (exit_code == 0);
+            assert (usage_called);
+        }
+
+        public void test_completion_command_rejects_unknown_action () {
+            var command = new CompletionCommand ();
+            var usage_called = false;
+            var exit_code = command.execute (new string[] {"vamposer", "completion", "status"}, () => {
+                usage_called = true;
+            });
+
+            assert (exit_code == 1);
             assert (usage_called);
         }
 
@@ -58,6 +92,28 @@ namespace AppTests {
             } finally {
                 Environment.set_current_dir (old_cwd);
             }
+        }
+
+        public void test_init_command_help_invokes_usage () {
+            var command = new InitCommand ();
+            var usage_called = false;
+            var exit_code = command.execute (new string[] {"vamposer", "init", "--help"}, () => {
+                usage_called = true;
+            });
+
+            assert (exit_code == 0);
+            assert (usage_called);
+        }
+
+        public void test_install_command_help_invokes_usage () {
+            var command = new InstallCommand ();
+            var usage_called = false;
+            var exit_code = command.execute (new string[] {"vamposer", "install", "--help"}, () => {
+                usage_called = true;
+            });
+
+            assert (exit_code == 0);
+            assert (usage_called);
         }
 
         public void test_install_command_uses_custom_config () {
@@ -187,6 +243,40 @@ namespace AppTests {
             assert (usage_called);
         }
 
+        public void test_require_command_help_invokes_usage () {
+            var command = new RequireCommand ();
+            var usage_called = false;
+            var exit_code = command.execute (new string[] {"vamposer", "require", "--help"}, () => {
+                usage_called = true;
+            });
+
+            assert (exit_code == 0);
+            assert (usage_called);
+        }
+
+        public void test_require_command_rejects_unknown_option () {
+            var command = new RequireCommand ();
+            var usage_called = false;
+            var exit_code = command.execute (new string[] {"vamposer", "require", "--nope"}, () => {
+                usage_called = true;
+            });
+
+            assert (exit_code == 1);
+            assert (usage_called);
+        }
+
+        public void test_require_command_rejects_too_many_positionals () {
+            var command = new RequireCommand ();
+            var usage_called = false;
+            var exit_code = command.execute (
+                new string[] {"vamposer", "require", "dep", "rev", "path.json", "extra"},
+                () => { usage_called = true; }
+            );
+
+            assert (exit_code == 1);
+            assert (usage_called);
+        }
+
         public void test_require_command_writes_dependency () {
             var old_cwd = Environment.get_current_dir ();
             string project_dir;
@@ -260,6 +350,29 @@ namespace AppTests {
             var exit_code = command.execute (new string[] {"vamposer", "remove"}, () => {
                 usage_called = true;
             });
+
+            assert (exit_code == 1);
+            assert (usage_called);
+        }
+
+        public void test_remove_command_help_invokes_usage () {
+            var command = new RemoveCommand ();
+            var usage_called = false;
+            var exit_code = command.execute (new string[] {"vamposer", "remove", "--help"}, () => {
+                usage_called = true;
+            });
+
+            assert (exit_code == 0);
+            assert (usage_called);
+        }
+
+        public void test_remove_command_rejects_too_many_positionals () {
+            var command = new RemoveCommand ();
+            var usage_called = false;
+            var exit_code = command.execute (
+                new string[] {"vamposer", "remove", "dep", "path.json", "extra"},
+                () => { usage_called = true; }
+            );
 
             assert (exit_code == 1);
             assert (usage_called);
@@ -351,6 +464,41 @@ namespace AppTests {
             } finally {
                 Environment.set_current_dir (old_cwd);
             }
+        }
+
+        public void test_update_command_help_invokes_usage () {
+            var command = new UpdateCommand ();
+            var usage_called = false;
+            var exit_code = command.execute (new string[] {"vamposer", "update", "--help"}, () => {
+                usage_called = true;
+            });
+
+            assert (exit_code == 0);
+            assert (usage_called);
+        }
+
+        public void test_update_command_rejects_unknown_option () {
+            var command = new UpdateCommand ();
+            var usage_called = false;
+            var exit_code = command.execute (
+                new string[] {"vamposer", "update", "--nope"},
+                () => { usage_called = true; }
+            );
+
+            assert (exit_code == 1);
+            assert (usage_called);
+        }
+
+        public void test_update_command_rejects_too_many_positionals () {
+            var command = new UpdateCommand ();
+            var usage_called = false;
+            var exit_code = command.execute (
+                new string[] {"vamposer", "update", "dep", "path.json", "extra"},
+                () => { usage_called = true; }
+            );
+
+            assert (exit_code == 1);
+            assert (usage_called);
         }
 
         public void test_update_command_accepts_dev_flag () {
