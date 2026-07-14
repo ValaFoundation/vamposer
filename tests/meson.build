@@ -4,6 +4,7 @@ test_sources = files(
   'config_test.vala',
   'resolver_test.vala',
   'installer_test.vala',
+  'installer_error_test.vala',
   'commands_test.vala',
   'system_dependency_installer_test.vala',
 )
