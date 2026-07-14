@@ -1,0 +1,74 @@
+name: Coverage
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test-coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Cache APT archives
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/apt/archives/*.deb
+          key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/ci.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
+
+      - name: Install system dependencies
+        run: |
+          mkdir -p "$HOME/.cache/apt/archives/partial"
+          sudo apt-get update
+          sudo apt-get install -y -o Dir::Cache::archives="$HOME/.cache/apt/archives" \
+            meson \
+            ninja-build \
+            valac \
+            pkg-config \
+            gcovr \
+            libglib2.0-dev \
+            libgee-0.8-dev \
+            libjson-glib-dev
+          sudo chown -R "$USER":"$USER" "$HOME/.cache/apt/archives"
+
+      - name: Configure project
+        run: meson setup builddir -Db_coverage=true
+
+      - name: Build project
+        run: meson compile -C builddir
+
+      - name: Run tests
+        run: meson test -C builddir --print-errorlogs
+
+      - name: Generate coverage report
+        run: |
+          gcovr \
+            --root . \
+            --object-directory builddir \
+            --filter 'src/' \
+            --exclude 'tests/' \
+            --exclude 'subprojects/' \
+            --gcov-ignore-errors=no_working_dir_found \
+            --gcov-ignore-errors=source_not_found \
+            --xml-pretty \
+            --output builddir/coverage.xml \
+            --print-summary
+          ls -la builddir/meson-logs
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          files: builddir/coverage.xml
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
