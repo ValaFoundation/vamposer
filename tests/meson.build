@@ -3,6 +3,7 @@ test_sources = files(
   'main.vala',
   'config_test.vala',
   'console_style_test.vala',
+  'logger_test.vala',
   'resolver_test.vala',
   'installer_test.vala',
   'installer_error_test.vala',

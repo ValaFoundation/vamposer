@@ -17,8 +17,8 @@ namespace Vamposer.Commands {
                 }
 
                 if (arg.has_prefix ("-")) {
-                    ConsoleStyle.print_error ("Unknown remove option: %s".printf (arg));
-                    stderr.printf ("\n");
+                    Logger.error ("Unknown remove option: %s".printf (arg));
+                    Logger.stderr_newline ();
                     print_usage ();
                     return 1;
                 }
@@ -27,15 +27,15 @@ namespace Vamposer.Commands {
             }
 
             if (positionals.size < 1) {
-                ConsoleStyle.print_error ("'remove' expects <dependency>");
-                stderr.printf ("\n");
+                Logger.error ("'remove' expects <dependency>");
+                Logger.stderr_newline ();
                 print_usage ();
                 return 1;
             }
 
             if (positionals.size > 2) {
-                ConsoleStyle.print_error ("'remove' expects <dependency> [path/to/vamposer.json]");
-                stderr.printf ("\n");
+                Logger.error ("'remove' expects <dependency> [path/to/vamposer.json]");
+                Logger.stderr_newline ();
                 print_usage ();
                 return 1;
             }
@@ -48,7 +48,7 @@ namespace Vamposer.Commands {
                 installer.remove_dependency (config_path, dependency, remove_dev);
                 return 0;
             } catch (Error e) {
-                ConsoleStyle.print_error (e.message);
+                Logger.error (e.message);
                 return 1;
             }
         }

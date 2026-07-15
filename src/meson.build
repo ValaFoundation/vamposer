@@ -17,6 +17,7 @@ vamposer_core_sources = files(
   'config.vala',
   'dependency_resolver.vala',
   'installer.vala',
+  'logger.vala',
   'system_dependency_installer.vala',
 ) + package_manager_sources + installer_operation_sources + cli_command_sources + [version_info_source]
 

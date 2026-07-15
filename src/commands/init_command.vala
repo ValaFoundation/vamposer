@@ -12,7 +12,7 @@ namespace Vamposer.Commands {
                 installer.init_config (config_path);
                 return 0;
             } catch (Error e) {
-                ConsoleStyle.print_error (e.message);
+                Logger.error (e.message);
                 return 1;
             }
         }

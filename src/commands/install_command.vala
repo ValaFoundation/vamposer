@@ -18,15 +18,15 @@ namespace Vamposer.Commands {
                 }
 
                 if (arg.has_prefix ("-")) {
-                    ConsoleStyle.print_error ("Unknown install option: %s".printf (arg));
-                    stderr.printf ("\n");
+                    Logger.error ("Unknown install option: %s".printf (arg));
+                    Logger.stderr_newline ();
                     print_usage ();
                     return 1;
                 }
 
                 if (config_path_set) {
-                    ConsoleStyle.print_error ("install expects at most one config path");
-                    stderr.printf ("\n");
+                    Logger.error ("install expects at most one config path");
+                    Logger.stderr_newline ();
                     print_usage ();
                     return 1;
                 }
@@ -40,7 +40,7 @@ namespace Vamposer.Commands {
                 installer.install (config_path, include_dev);
                 return 0;
             } catch (Error e) {
-                ConsoleStyle.print_error (e.message);
+                Logger.error (e.message);
                 return 1;
             }
         }

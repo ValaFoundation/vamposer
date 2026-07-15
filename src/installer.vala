@@ -619,7 +619,7 @@ directory = %s
 
             var args = va_list ();
             var line = format.vprintf (args);
-            stdout.printf ("%s", ConsoleStyle.style_log_line (line));
+            Logger.log_line (line);
         }
 
         private string sanitize_symbol (string name) {

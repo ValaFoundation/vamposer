@@ -8,6 +8,7 @@ int main (string[] args) {
 
     ValaFoundation.Testcases.register_test_suite<AppTests.ConfigTest> ();
     ValaFoundation.Testcases.register_test_suite<AppTests.ConsoleStyleTest> ();
+    ValaFoundation.Testcases.register_test_suite<AppTests.LoggerTest> ();
     ValaFoundation.Testcases.register_test_suite<AppTests.DependencyResolverTest> ();
     ValaFoundation.Testcases.register_test_suite<AppTests.InstallerTest> ();
     ValaFoundation.Testcases.register_test_suite<AppTests.InstallerErrorTest> ();

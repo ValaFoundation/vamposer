@@ -6,7 +6,7 @@ namespace Vamposer.Commands {
                 installer.self_upgrade (args[0]);
                 return 0;
             } catch (Error e) {
-                ConsoleStyle.print_error (e.message);
+                Logger.error (e.message);
                 return 1;
             }
         }

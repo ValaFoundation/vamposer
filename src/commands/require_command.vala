@@ -17,8 +17,8 @@ namespace Vamposer.Commands {
                 }
 
                 if (arg.has_prefix ("-")) {
-                    ConsoleStyle.print_error ("Unknown require option: %s".printf (arg));
-                    stderr.printf ("\n");
+                    Logger.error ("Unknown require option: %s".printf (arg));
+                    Logger.stderr_newline ();
                     print_usage ();
                     return 1;
                 }
@@ -27,15 +27,15 @@ namespace Vamposer.Commands {
             }
 
             if (positionals.size < 1) {
-                ConsoleStyle.print_error ("'require' expects at least <dependency>");
-                stderr.printf ("\n");
+                Logger.error ("'require' expects at least <dependency>");
+                Logger.stderr_newline ();
                 print_usage ();
                 return 1;
             }
 
             if (positionals.size > 3) {
-                ConsoleStyle.print_error ("'require' expects <dependency> [revision] [path/to/vamposer.json]");
-                stderr.printf ("\n");
+                Logger.error ("'require' expects <dependency> [revision] [path/to/vamposer.json]");
+                Logger.stderr_newline ();
                 print_usage ();
                 return 1;
             }
@@ -49,7 +49,7 @@ namespace Vamposer.Commands {
                 installer.require_dependency (config_path, dependency, revision, include_dev);
                 return 0;
             } catch (Error e) {
-                ConsoleStyle.print_error (e.message);
+                Logger.error (e.message);
                 return 1;
             }
         }

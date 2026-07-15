@@ -8,8 +8,8 @@ namespace Vamposer.Commands {
 
             var action = args.length >= 3 ? args[2] : "install";
             if (action != "install") {
-                ConsoleStyle.print_error ("Unknown completion action: %s".printf (action));
-                stderr.printf ("\n");
+                Logger.error ("Unknown completion action: %s".printf (action));
+                Logger.stderr_newline ();
                 print_usage ();
                 return 1;
             }
@@ -18,26 +18,26 @@ namespace Vamposer.Commands {
                 var result = CompletionInstaller.install_for_current_user (true);
                 switch (result) {
                 case CompletionInstallResult.INSTALLED:
-                    ConsoleStyle.print_success ("Shell completion installed or updated for current user. Restart shell or source your rc file.");
+                    Logger.success ("Shell completion installed or updated for current user. Restart shell or source your rc file.");
                     return 0;
                 case CompletionInstallResult.ALREADY_INSTALLED:
-                    ConsoleStyle.print_info ("Shell completion is already installed and up to date for current user.");
+                    Logger.info ("Shell completion is already installed and up to date for current user.");
                     return 0;
                 case CompletionInstallResult.SKIPPED_UNSUPPORTED_PLATFORM:
-                    ConsoleStyle.print_error ("Completion auto-install is currently supported on Linux only");
+                    Logger.error ("Completion auto-install is currently supported on Linux only");
                     return 1;
                 case CompletionInstallResult.SKIPPED_UNSUPPORTED_SHELL:
-                    ConsoleStyle.print_error ("Unsupported shell for completion auto-install. Use bash or zsh.");
+                    Logger.error ("Unsupported shell for completion auto-install. Use bash or zsh.");
                     return 1;
                 case CompletionInstallResult.SKIPPED_DISABLED:
-                    ConsoleStyle.print_warning ("Completion auto-install is disabled by VAMPOSER_NO_AUTO_COMPLETION=1");
+                    Logger.warning ("Completion auto-install is disabled by VAMPOSER_NO_AUTO_COMPLETION=1");
                     return 0;
                 default:
-                    ConsoleStyle.print_error ("Unknown completion installer result");
+                    Logger.error ("Unknown completion installer result");
                     return 1;
                 }
             } catch (Error e) {
-                ConsoleStyle.print_error (e.message);
+                Logger.error (e.message);
                 return 1;
             }
         }
